@@ -155704,7 +155704,7 @@ kids 9
 OBJECT poly
 name "Mesh739"
 loc -0.364035 -0.0187473 0.0275073
-texture "liveries/F-15C_Eagle_P01.png"
+texture "liveries/f15-top.rgb"
 crease 45.000000
 numvert 352
 3.28698 0.121281 -1.6233
@@ -302994,7 +302994,7 @@ kids 0
 OBJECT poly
 name "Mesh90_1"
 loc -0.364035 0.00617355 -0.0474509
-texture "Parts_1.png"
+texture "liveries/Parts_1.png"
 crease 45.000000
 numvert 65
 6.16932 0.582164 -0.859307
@@ -303589,7 +303589,7 @@ kids 0
 OBJECT poly
 name "Mesh91_1"
 loc -0.364035 -0.0187473 0.0712885
-texture "Parts_1.png"
+texture "liveries/Parts_1.png"
 crease 45.000000
 numvert 65
 6.16932 0.582164 0.154569
