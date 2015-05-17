@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
- 
 <PropertyList>
-  <name>Effects/f15-interior</name>
-  <inherits-from>Effects/model-interior</inherits-from>
-  <parameters>
+    <name>Effects/f15interior</name>
+    <inherits-from>Effects/model-interior</inherits-from>
+
+    <parameters>
 	<texture n="4">
 	  <type>cubemap</type>
 	  <images>
@@ -18,5 +18,6 @@
 	<opacity-cube-center type="vec3d" n="0"> 0.5 0.0 0.3</opacity-cube-center>
 	<opacity-cube-scale type="vec3d" n="0"> 1.5 0.5 0.7</opacity-cube-scale>
 	<opacity-cube-angle type="float">0.0</opacity-cube-angle>
-  </parameters>
+
+    </parameters>
 </PropertyList>
