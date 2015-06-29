@@ -113,7 +113,7 @@
     <animation>
         <type>shader</type>
         <shader>chrome</shader>
-        <texture>Aircraft/f15c/Models/glass_shader.png</texture>
+        <texture>Aircraft/F-15/Models/glass_shader.png</texture>
         <object-name>WindscreenGlass</object-name>
         <object-name>CanopyGlass</object-name>
     </animation>
