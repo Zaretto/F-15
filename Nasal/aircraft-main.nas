@@ -1,3 +1,11 @@
+#
+# F-15 Main Nasal Module 
+# ---------------------------
+# Declares globals; provides update loop 
+# ---------------------------
+# Richard Harrison (rjh@zaretto.com) 2014-11-23. Based on F-14b by xii
+#
+
 ## Global constants ##
 var true = 1;
 var false = 0;
@@ -60,6 +68,11 @@ setprop("sim/fdm/surface/override-level", 0);
 
 aircraft.tyresmoke_system.new(0, 1, 2);
 aircraft.rain.init();
+setprop("/environment/aircraft-effects/overlay-alpha",0.45);
+setprop("/environment/aircraft-effects/use-overlay",1);
+setprop("/environment/aircraft-effects/use-reflection",1);
+setprop("/environment/aircraft-effects/reflection-strength",0.25);
+
 
 var position_switch = func(n) {
 	var sw_pos = sw_pos_prop.getValue();
@@ -116,27 +129,22 @@ var position_flash_init  = func {
 
 
 # Canopy switch animation and canopy move. Toggle keystroke and 2 positions switch.
-var cnpy = aircraft.door.new("canopy", 3.9);
-var cswitch = props.globals.getNode("sim/model/f15/controls/canopy/canopy-switch", 1);
+# Timing from https://www.youtube.com/watch?v=MSWz55b_jtE 2:25 (about 5 seconds)
+var cnpy = aircraft.door.new("canopy", 5);
 var pos = props.globals.getNode("canopy/position-norm");
 
-var canopyswitch = func(v) {
-	var p = pos.getValue();
-	if (v == 2 ) {
-		if ( p < 1 ) {
-			v = 1;
-		} elsif ( p >= 1 ) {
-			v = -1;
-		}
-	}
-	if (v < 0) {
-		cswitch.setValue(1);
+
+setlistener("sim/model/f15/controls/canopy/canopy-switch", func(prop) {
+	var v = prop.getValue();
+	if (!v)
+	{
 		cnpy.close();
-	} elsif (v > 0) {
-		cswitch.setValue(-1);
+	}
+	else
+	{
 		cnpy.open();
 	}
-}
+});
 
 
 # Flight control system ######################### 
@@ -158,9 +166,8 @@ var fuel_dump_generic  = props.globals.getNode("sim/multiplay/generic/int[0]",1)
 # sim/multiplay/generic/int[2] used by radar standby.
 var lighting_collision_generic = props.globals.getNode("sim/multiplay/generic/int[3]",1);
 var lighting_position_generic  = props.globals.getNode("sim/multiplay/generic/int[4]",1);
-var left_wing_torn_generic     = props.globals.getNode("sim/multiplay/generic/int[5]",1);
-var right_wing_torn_generic    = props.globals.getNode("sim/multiplay/generic/int[6]",1);
-var lighting_taxi_generic       = props.globals.getNode("sim/multiplay/generic/int[7]",1);
+var wing_torn_generic     = props.globals.getNode("sim/multiplay/generic/float[3]",1);
+var lighting_taxi_generic       = props.globals.getNode("sim/multiplay/generic/int[6]",1);
 
 #
 #
@@ -170,11 +177,96 @@ var carrier_ara_63_position = nil;
 var carrier_heading = nil;
 var carrier_ara_63_heading = nil;
 
-
 var wow = 1;
 setprop("/fdm/jsbsim/fcs/roll-trim-actuator",0) ;
 setprop("/controls/flight/SAS-roll",0);
 var registerFCS = func {settimer (updateFCS, 0);}
+
+#
+#
+# set the splash vector for the new canopy rain.
+
+# for tuning the vector; these will be baked in once finished
+setprop("/sim/model/f15/sfx1",-0.1);
+setprop("/sim/model/f15/sfx2",4);
+setprop("/sim/model/f15/sf-x-max",400);
+setprop("/sim/model/f15/sfy1",0);
+setprop("/sim/model/f15/sfy2",0.1);
+setprop("/sim/model/f15/sfz1",1);
+setprop("/sim/model/f15/sfz2",-0.1);
+
+#var vl_x = 0;
+#var vl_y = 0;
+#var vl_z = 0;
+#var vsplash_precision = 0.001;
+var splash_vec_loop = func
+{
+    var v_x = getprop("/fdm/jsbsim/velocities/u-aero-fps");
+    var v_y = getprop("/fdm/jsbsim/velocities/v-aero-fps");
+    var v_z = getprop("/fdm/jsbsim/velocities/w-aero-fps");
+#    var v_x = getprop("/velocities/uBody-fps");
+#    var v_y = getprop("/velocities/vBody-fps");
+#    var v_z = getprop("/velocities/wBody-fps");
+    var v_x_max = getprop("/sim/model/f15/sf-x-max");
+ 
+    if (v_x > v_x_max) 
+        v_x = v_x_max;
+ 
+    if (v_x > 1)
+        v_x = math.sqrt(v_x/v_x_max);
+#var splash_x = -0.1 - 2.0 * v_x;
+#var splash_y = 0.0;
+#var splash_z = 1.0 - 1.35 * v_x;
+
+    var splash_x = getprop("/sim/model/f15/sfx1") - getprop("/sim/model/f15/sfx2") * v_x;
+    var splash_y = getprop("/sim/model/f15/sfy1") - getprop("/sim/model/f15/sfy2") * v_y;
+    var splash_z = getprop("/sim/model/f15/sfz1") - getprop("/sim/model/f15/sfz2") * v_z;
+
+#if (math.abs(vl_x - v_x) >  vsplash_precision)
+    setprop("/environment/aircraft-effects/splash-vector-x", splash_x);
+#if (math.abs(vl_y - v_y) >  vsplash_precision)
+    setprop("/environment/aircraft-effects/splash-vector-y", splash_y);
+#if (math.abs(vl_z - v_z) >  vsplash_precision)
+    setprop("/environment/aircraft-effects/splash-vector-z", splash_z);
+#vl_x = v_x;
+#vl_y = v_y;
+#vl_z = v_z;
+
+#    interpolate("/environment/aircraft-effects/splash-vector-z", splash_z, 0.01);
+ 
+if (wow and getprop("gear/gear[0]/rollspeed-ms") < 30)
+    settimer( func {splash_vec_loop() },2.5);
+else
+    settimer( func {splash_vec_loop() },1.2);
+
+}
+
+splash_vec_loop();
+
+#
+# Rate 4 modules (5hz) (rate 4 comes from quarter frame at 30hz)
+
+var rate4modules = func {
+    aircraft.updateVSD();
+    aircraft.updateTEWS();
+    aircraft.updateMPCD();
+    aircraft.electricsFrame();
+	aircraft.computeNWS ();
+aircraft.update_weapons_over_mp();
+	settimer (rate4modules, 0.20);
+}
+var rate2modules = func {
+    aircraft.updateHUD();
+	settimer (rate2modules, 0.04);
+    setprop("environment/aircraft-effects/frost-level", getprop("/fdm/jsbsim/systems/ecs/windscreen-frost-amount"));
+}
+#
+# launch the timers; the time here isn't important as it will be rescheduled within the rate module exec
+settimer (rate4modules, 1); 
+settimer (rate2modules, 1);
+
+#
+# Standard update loop.
 
 var updateFCS = func {
 	 aircraft.rain.update();
@@ -192,7 +284,7 @@ var updateFCS = func {
 
     # the FDM has a combined aileron deflection so split this for animation purposes.
     var current_aileron = aileron.getValue();
-    var elevator_deflection_due_to_aileron_deflection =  current_aileron / 2.0;
+    var elevator_deflection_due_to_aileron_deflection =  current_aileron / 3.33; # 20 aileron - 6 elevator. should come from the DTD
     left_elev_generic.setDoubleValue(elev_output.getValue() + elevator_deflection_due_to_aileron_deflection);
     right_elev_generic.setDoubleValue(elev_output.getValue() - elevator_deflection_due_to_aileron_deflection);
     aileron_generic.setDoubleValue(-current_aileron);
@@ -219,13 +311,10 @@ var updateFCS = func {
     }
 
 	#update functions
-#	aircraft.computeFlaps ();
-#	aircraft.computeSpoilers ();
-	aircraft.computeNozzles ();
+    aircraft.computeAPC();
+	aircraft.computeEngines ();
 	aircraft.computeAdverse ();
-	aircraft.computeNWS ();
-	aircraft.computeAICS ();
-    aircraft.electricsFrame();
+
 	aircraft.registerFCS (); # loop, once per frame.
 }
 
@@ -236,6 +325,9 @@ var startProcess = func {
 #slat_output.setDoubleValue(0);
 
 }
+var two_seater = getprop("fdm/jsbsim/metrics/two-place-canopy");
+if (two_seater)
+print("F-15 two seat variant (B,D,E)");
 
 setlistener("/sim/signals/fdm-initialized", startProcess);
 
@@ -245,15 +337,17 @@ setlistener("/sim/signals/fdm-initialized", startProcess);
 #----------------------------------------------------------------------------
 
 var CurrentView_Num = props.globals.getNode("sim/current-view/view-number");
-var rio_view_num = view.indexof("RIO View");
+var backseat_view_num = view.indexof("Backset View");
 
 var toggle_cockpit_views = func() {
 	cur_v = CurrentView_Num.getValue();
-	if (cur_v != 0 ) {
+	if (cur_v != 0 )
+    {
 		CurrentView_Num.setValue(0);
-	} else {
-		CurrentView_Num.setValue(rio_view_num);
 	}
+    else if(two_seater){
+        CurrentView_Num.setValue(backseat_view_num);
+    }
 }
 
 
@@ -267,10 +361,21 @@ var quickstart = func() {
     if(total_lbs < 400)
         set_fuel(5500);
 
-    setprop("sim/model/f15/controls/hud/on-off",1);
-    setprop("sim/model/f15/controls/VDI/on-off",1);
-    setprop("sim/model/f15/controls/HSD/on-off",1);
+        settimer(func { 
 
+#    setprop("controls/lighting/panel-norm",1);
+#    setprop("controls/lighting/instruments-norm",1);
+    setprop("sim/model/f15/controls/HUD/brightness",1);
+    setprop("sim/model/f15/controls/HUD/on-off",true);
+    setprop("sim/model/f15/controls/VSD/brightness",1);
+    setprop("sim/model/f15/controls/VSD/on-off",true);
+    setprop("sim/model/f15/controls/TEWS/brightness",1);
+    setprop("sim/model/f15/controls/MPCD/brightness",1);
+    setprop("sim/model/f15/controls/MPCD/on-off",true);
+    setprop("sim/model/f15/controls/MPCD/mode",2);
+    setprop("sim/model/f15/lights/radio2-brightness",0.6);
+
+setprop("sim/model/f15/controls/windshield-heat",1);
     setprop("sim/model/f15/controls/electrics/emerg-flt-hyd-switch",0);
     setprop("sim/model/f15/controls/electrics/emerg-gen-guard-lever",0);
 	setprop("sim/model/f15/controls/electrics/emerg-gen-switch",1);
@@ -284,6 +389,9 @@ var quickstart = func() {
     setprop("engines/engine[1]/out-of-fuel",0);
     setprop("engines/engine[1]/run",1);
     setprop("engines/engine[1]/run",1);
+    setprop("fdm/jsbsim/fcs/pitch-damper-enable",1);
+    setprop("fdm/jsbsim/fcs/roll-damper-enable",1);
+    setprop("fdm/jsbsim/fcs/yaw-damper-enable",1);
 
 setprop("/engines/engine[1]/cutoff",0);
 setprop("/engines/engine[0]/cutoff",0);
@@ -292,7 +400,7 @@ setprop("/fdm/jsbsim/propulsion/starter_cmd",1);
 setprop("/fdm/jsbsim/propulsion/cutoff_cmd",1);
 setprop("/fdm/jsbsim/propulsion/set-running",1);
 setprop("/fdm/jsbsim/propulsion/set-running",0);
-
+ }, 0.2);
 }
 
 

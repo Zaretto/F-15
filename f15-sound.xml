@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- F-15 sounds
+   |  Richard Harrison: 2014-11-23 : rjh@zaretto.com - based on F-14 
+-->
 <PropertyList>
     <fx>
         <avionics-hum>
@@ -21,13 +24,10 @@
         <engine-jfs-start>
             <name>engine-jfs-start</name>
             <mode>once</mode>
-            <path>Aircraft/f-14b/Sounds/jfs-startup.wav</path>
+            <path>Sounds/jfs-startup.wav</path>
             <condition>
-                <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
-                </not>
                 <greater-than>
-                    <property>sim/model/f-14b/controls/jfs</property>
+                    <property>sim/model/f15/controls/jfs</property>
                     <value>9</value>
                 </greater-than>
             </condition>
@@ -42,13 +42,13 @@
 
             <name>engine-jfs-shutdown</name>
             <mode>once</mode>
-            <path>Aircraft/f-14b/Sounds/jfs-shutdown.wav</path>
+            <path>Sounds/jfs-shutdown.wav</path>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <equals>
-                    <property>sim/model/f-14b/controls/jfs</property>
+                    <property>sim/model/f15/controls/jfs</property>
                     <value>1</value>
                 </equals>
             </condition>
@@ -63,14 +63,14 @@
         <engine-jfs-running>
             <name>engine-jfs-running-inside</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/jfs-running.wav</path>
+            <path>Sounds/jfs-running.wav</path>
             <delay-sec>6.3</delay-sec>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <greater-than>
-                    <property>sim/model/f-14b/controls/jfs</property>
+                    <property>sim/model/f15/controls/jfs</property>
                     <value>9</value>
                 </greater-than>
             </condition>
@@ -83,11 +83,11 @@
 
         <engine-jet-intake-l>
             <name>engine-jet-intake-l</name>
-            <path>Aircraft/f-14b/Sounds/jet-intake-air.wav</path>
+            <path>Sounds/jet-intake-air.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
 <not>
                 <property>sim/current-view/internal-canopy-closed</property>
@@ -120,11 +120,11 @@
 
         <engine-jet-intake-r>
             <name>engine-jet-intake-r</name>
-            <path>Aircraft/f-14b/Sounds/jet-intake-air.wav</path>
+            <path>Sounds/jet-intake-air.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
 <not>
                 <property>sim/current-view/internal-canopy-closed</property>
@@ -158,10 +158,10 @@
 
         <engine-jet-whine-n1-l>
             <name>engine-jet-whine-n1-l</name>
-            <path>Aircraft/f-14b/Sounds/jet-whine.wav</path>
+            <path>Sounds/jet-whine.wav</path>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <mode>looped</mode>
@@ -194,11 +194,11 @@
 
         <engine-jet-whine-n2-l1>
             <name>engine-jet-whine-n2-l1</name>
-            <path>Aircraft/f-14b/Sounds/jet-whine.wav</path>
+            <path>Sounds/jet-whine.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <pitch>
@@ -230,11 +230,11 @@
 
         <engine-jet-whine-n1-r>
             <name>engine-jet-whine-n1-r</name>
-            <path>Aircraft/f-14b/Sounds/jet-whine.wav</path>
+            <path>Sounds/jet-whine.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <pitch>
@@ -266,11 +266,11 @@
 
         <engine-jet-whine-n2-r1>
             <name>engine-jet-whine-n2-r1</name>
-            <path>Aircraft/f-14b/Sounds/jet-whine.wav</path>
+            <path>Sounds/jet-whine.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <pitch>
@@ -302,11 +302,11 @@
 
         <engine-jet-exhaust-inside-l>
             <name>engine-jet-exhaust-inside-l</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-exhaust.wav</path>
+            <path>Sounds/engine-jet-exhaust.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <property>sim/current-view/internal-canopy-closed</property>
             </condition>
@@ -334,11 +334,11 @@
 
         <engine-jet-exhaust-inside-r>
             <name>engine-jet-exhaust-inside-r</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-exhaust.wav</path>
+            <path>Sounds/engine-jet-exhaust.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <property>sim/current-view/internal-canopy-closed</property>
             </condition>
@@ -365,11 +365,11 @@
 
         <engine-jet-efflux-velocity-blast-l>
             <name>engine-jet-efflux-velocity-blast-l</name>
-            <path>Aircraft/f-14b/Sounds/jet-efflux-2.wav</path>
+            <path>Sounds/jet-efflux-2.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <not>
                     <property>sim/current-view/internal-canopy-closed</property>
@@ -405,14 +405,14 @@
 
         <engine-jet-efflux-velocity-blast-r>
             <name>engine-jet-efflux-velocity-blast-r</name>
-            <path>Aircraft/f-14b/Sounds/jet-efflux-2.wav</path>
+            <path>Sounds/jet-efflux-2.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
                     <property>sim/current-view/internal-canopy-closed</property>
                 </not>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
 <greater-than>
 	<property>engines/engine[1]/thrust_lb</property>
@@ -445,11 +445,11 @@
 
        <engine-jet-exhaust-l>
             <name>engine-jet-exhaust-l</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-exhaust.wav</path>
+            <path>Sounds/engine-jet-exhaust.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <not>
                     <property>sim/current-view/internal-canopy-closed</property>
@@ -479,14 +479,14 @@
 
         <engine-jet-exhaust-r>
             <name>engine-jet-exhaust-r</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-exhaust.wav</path>
+            <path>Sounds/engine-jet-exhaust.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
                     <property>sim/current-view/internal-canopy-closed</property>
                 </not>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <volume>
@@ -512,14 +512,14 @@
 
         <engine-jet-afterburner-inside-l>
            <name>engine-jet-afterburner-inside-l</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-afterburner-inside.wav</path>
+            <path>Sounds/engine-jet-afterburner-inside.wav</path>
             <mode>looped</mode>
             <condition>
                 <property>sim/current-view/internal-canopy-closed</property>
                 <property>engines/engine[0]/augmentation</property>
                 <property>engines/engine[0]/running</property>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
             </condition>
             <volume>
@@ -545,13 +545,13 @@
 
         <engine-jet-afterburner-inside-r>
             <name>engine-jet-afterburner-inside-r</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-afterburner-inside.wav</path>
+            <path>Sounds/engine-jet-afterburner-inside.wav</path>
             <mode>looped</mode>
             <condition>
                 <property>sim/current-view/internal-canopy-closed</property>
                 <property>engines/engine[1]/augmentation</property>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <property>engines/engine[1]/running</property>
             </condition>
@@ -578,7 +578,7 @@
 
         <engine-jet-afterburner-l>
            <name>engine-jet-afterburner-l</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-afterburner.wav</path>
+            <path>Sounds/engine-jet-afterburner.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
@@ -586,7 +586,7 @@
                 </not>
                 <property>engines/engine[0]/augmentation</property>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <property>engines/engine[0]/running</property>
             </condition>
@@ -620,7 +620,7 @@
 
         <engine-jet-afterburner-r>
             <name>engine-jet-afterburner-r</name>
-            <path>Aircraft/f-14b/Sounds/engine-jet-afterburner.wav</path>
+            <path>Sounds/engine-jet-afterburner.wav</path>
             <mode>looped</mode>
             <condition>
                 <not>
@@ -628,7 +628,7 @@
                 </not>
                 <property>engines/engine[1]/augmentation</property>
                 <not>
-                    <property>sim/model/f-14b/engine-sound-freeze</property>
+                    <property>sim/model/f15/engine-sound-freeze</property>
                 </not>
                 <property>engines/engine[1]/running</property>
             </condition>
@@ -658,10 +658,10 @@
         <fuselage-scrape>
             <name>fuselage-scrape</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/fuselage-strike.wav</path>
+            <path>Sounds/fuselage-strike.wav</path>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/gear-sound-freeze</property>
+                    <property>sim/model/f15/gear-sound-freeze</property>
                 </not>
                 <or>
                     <property>fdm/jsbsim/contact/unit[3]/WOW</property>
@@ -691,10 +691,10 @@
         </fuselage-scrape>
         <fuselage-strike>
             <name>fuselage-strike</name>
-            <path>Aircraft/f-14b/Sounds/fuselage-strike.wav</path>
+            <path>Sounds/fuselage-strike.wav</path>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/gear-sound-freeze</property>
+                    <property>sim/model/f15/gear-sound-freeze</property>
                 </not>
                 <or>
                     <property>fdm/jsbsim/contact/unit[3]/WOW</property>
@@ -723,7 +723,7 @@
             <path>Sounds/rumble.wav</path>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/gear-sound-freeze</property>
+                    <property>sim/model/f15/gear-sound-freeze</property>
                 </not>
                 <or>
                     <property>gear/gear[0]/wow</property>
@@ -743,11 +743,11 @@
             <!--wheel-speed-fps-->
             <name>nose wheel rumble</name>
             <mode>in-transit</mode>
-            <path>Aircraft/f-14b/Sounds/ground-rattle.wav</path>
+            <path>Sounds/ground-rattle.wav</path>
             <property>fdm/jsbsim/gear/unit[0]/compression-velocity-fps</property>
             <condition>
                 <not>
-                    <property>sim/model/f-14b/gear-sound-freeze</property>
+                    <property>sim/model/f15/gear-sound-freeze</property>
                 </not>
                 <property>gear/gear[0]/wow</property>
                 <property>sim/current-view/internal</property>
@@ -777,9 +777,18 @@
         </rattle-front>
 
         <flaps-wind>
+            <condition>
+                <!--<not>
+                    <property>sim/model/f15/gear-sound-freeze</property>
+                </not>-->
+                <greater-than>
+                    <property>fdm/jsbsim/fcs/flap-windfx-volume</property>
+                    <value>0</value>
+                </greater-than>
+            </condition>
             <name>flaps-wind</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/wind-noise.wav</path>
+            <path>Sounds/wind-noise.wav</path>
             <volume>
                 <property>fdm/jsbsim/fcs/flap-windfx-volume</property>
                 <factor>0.002</factor>
@@ -795,9 +804,18 @@
         </flaps-wind>
         <!-- Gears -->
         <gear-0-wind>
+            <condition>
+                <not>
+                    <property>sim/model/f15/gear-sound-freeze</property>
+                </not>
+                <greater-than>
+                    <property>fdm/jsbsim/fcs/gear-windfx-volume</property>
+                    <value>0</value>
+                </greater-than>
+            </condition>
             <name>gear-0-wind</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/wind-noise.wav</path>
+            <path>Sounds/wind-noise.wav</path>
             <volume>
                 <property>fdm/jsbsim/fcs/gear-windfx-volume</property>
                 <factor>0.005</factor>
@@ -810,7 +828,7 @@
         <gear-0-transit>
             <name>gear-0-transit</name>
             <mode>in-transit</mode>
-            <path>Aircraft/f-14b/Sounds/gear-transit.wav</path>
+            <path>Sounds/gear-transit.wav</path>
             <property>gear/gear[0]/position-norm</property>
             <volume>
                 <factor>1.1</factor>
@@ -824,7 +842,7 @@
         </gear-0-transit>
         <gear-0-lock>
             <name>gear-0-lock</name>
-            <path>Aircraft/f-14b/Sounds/gear-door-close.wav</path>
+            <path>Sounds/gear-door-close.wav</path>
             <condition>
                 <or>
                     <equals>
@@ -847,7 +865,13 @@
         <wind>
             <name>wind</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/wind-noise.wav</path>
+            <path>Sounds/wind-noise.wav</path>
+            <condition>
+                <greater-than>
+                    <property>velocities/airspeed-kt</property>
+                    <value>30</value>
+                </greater-than>
+            </condition>
             <volume>
                 <property>velocities/airspeed-kt</property>
                 <factor>0.000747400</factor>
@@ -866,7 +890,7 @@
         <high-alpha-airflow>
             <name>high-alpha-airflow</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/stall-buffet.wav</path>
+            <path>Sounds/stall-buffet.wav</path>
             <condition>
                 <greater-than>
                     <property>orientation/alpha-deg</property>
@@ -894,7 +918,13 @@
         <air-brakes>
             <name>air-brakes</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/air-brakes.wav</path>
+            <condition>
+                <greater-than>
+                    <property>surface-positions/speedbrake-pos-norm</property>
+                    <value>0</value>
+                </greater-than>
+            </condition>
+            <path>Sounds/air-brakes.wav</path>
             <volume>
                 <property>velocities/airspeed-kt</property>
                 <factor>0.001</factor>
@@ -907,7 +937,7 @@
 
         <squeal-nose-gear>
             <name>squeal-nose-gear</name>
-            <path>Aircraft/f-14b/Sounds/tyre-squeal.wav</path>
+            <path>Sounds/tyre-squeal.wav</path>
             <condition>
                 <equals>
                     <property>gear/gear[0]/wow</property>
@@ -933,7 +963,7 @@
 
         <squeal-left-mlg>
             <name>squeal-left-mlg</name>
-            <path>Aircraft/f-14b/Sounds/tyre-squeal.wav</path>
+            <path>Sounds/tyre-squeal.wav</path>
             <condition>
                 <property>gear/gear[1]/wow</property>
             </condition>
@@ -956,7 +986,7 @@
 
         <squeal-right-mlg>
             <name>squeal-right-mlg</name>
-            <path>Aircraft/f-14b/Sounds/tyre-squeal.wav</path>
+            <path>Sounds/tyre-squeal.wav</path>
             <condition>
                 <property>gear/gear[2]/wow</property>
             </condition>
@@ -978,7 +1008,7 @@
         </squeal-right-mlg>
 
         <squeal-nose-sideslip>
-            <path>Aircraft/f-14b/Sounds/tyre-squealing-sideslip.wav</path>
+            <path>Sounds/tyre-squealing-sideslip.wav</path>
             <mode>looped</mode>
             <condition>
                 <or>
@@ -1019,7 +1049,7 @@
 
         <squeal-left-mlg-sideslip>
             <name>squeal-left-mlg-sideslip</name>
-            <path>Aircraft/f-14b/Sounds/tyre-squealing-sideslip.wav</path>
+            <path>Sounds/tyre-squealing-sideslip.wav</path>
             <mode>looped</mode>
             <condition>
                 <or>
@@ -1057,7 +1087,7 @@
 
         <squeal-right-mlg-sideslip>
             <name>squeal-right-mlg-sideslip</name>
-            <path>Aircraft/f-14b/Sounds/tyre-squealing-sideslip.wav</path>
+            <path>Sounds/tyre-squealing-sideslip.wav</path>
             <mode>looped</mode>
             <condition>
                 <or>
@@ -1096,7 +1126,7 @@
         <flap-in-transit>
             <name>flaps-in-transit</name>
             <mode>in-transit</mode>
-            <path>Aircraft/f-14b/Sounds/flaps-transit.wav</path>
+            <path>Sounds/flaps-transit.wav</path>
             <property>surface-positions/flap-pos-norm</property>
             <pitch>
                 <property>surface-positions/flap-pos-norm</property>
@@ -1109,7 +1139,7 @@
         <canopy>
             <name>canopy</name>
             <mode>in-transit</mode>
-            <path>Aircraft/f-14b/Sounds/canopy-trans.wav</path>
+            <path>Sounds/canopy-trans.wav</path>
             <property>canopy/position-norm</property>
             <volume>
                 <factor>0.2</factor>
@@ -1118,11 +1148,11 @@
         <canopy-close>
             <name>canopy-close2</name>
             <mode>once</mode>
-            <path>Aircraft/f-14b/Sounds/canopy-close2.wav</path>
+            <path>Sounds/canopy-close2.wav</path>
             <condition>
                 <less-than-equals>
                     <property>canopy/position-norm</property>
-                    <value>0</value>
+                    <value>0.2</value>
                 </less-than-equals>
             </condition>
             <volume>
@@ -1133,7 +1163,7 @@
         <pre-stall>
             <name>pre-stall</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/stall-600-chopped.wav</path>
+            <path>Sounds/900hz-intermittent.wav</path>
             <condition>
                 <greater-than>
                     <property>orientation/alpha-deg</property>
@@ -1166,7 +1196,7 @@
         <stall>
             <name>stall</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/stall-600-continue.wav</path>
+            <path>Sounds/900hz-continuous.wav</path>
             <condition>
                 <greater-than>
                     <property>orientation/alpha-deg</property>
@@ -1192,12 +1222,29 @@
             </volume>
             <max-dist>5</max-dist>
         </stall>
+        <gear-warning>
+            <name>gear-warning</name>
+            <mode>looped</mode>
+            <path>Sounds/f-15-warning-tone.wav</path>
+            <condition>
+                <property>/fdm/jsbsim/systems/cadc/gear-warning-tone</property>
+                <greater-than>
+                    <property>/fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <value>0</value>
+                </greater-than>
+                <property>sim/current-view/internal</property>
+            </condition>
+            <volume>
+                <factor>0.6</factor>
+            </volume>
+            <max-dist>5</max-dist>
+        </gear-warning>
         <gun>
             <name>gun</name>
             <mode>looped</mode>
-            <path>Aircraft/f-14b/Sounds/M61A1.wav</path>
+            <path>Sounds/M61A1.wav</path>
             <condition>
-                <property>sim/model/f-14b/systems/gun/running</property>
+                <property>sim/model/f15/systems/gun/running</property>
             </condition>
             <volume>
                 <value>1</value>
