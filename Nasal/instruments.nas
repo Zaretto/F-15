@@ -1,3 +1,11 @@
+# F-15 General Instrumentation related methods
+# ---------------------------
+# This module is responsible for instrumentation updates; managing the init process (i.e. reposition) has special logic
+# for carrier takeoff (the F-15 can't do this in real life; but carriers are still fun so I'm leaving carrier support in the F-15)
+# ---------------------------
+# Richard Harrison (rjh@zaretto.com) Feb  2015 - based on F-14B version by Alexis Bory
+# ---------------------------
+
 var UPDATE_PERIOD = 0.05;
 var main_loop_launched = 0; # Used to avoid to start the main loop twice.
 
@@ -166,11 +174,14 @@ var ara_63_update = func {
             setprop("sim/model/f15/lights/light-wave-off",0);
             setprop("sim/model/f15/lights/acl-ready-light", 0);
             setprop("sim/model/f15/lights/ap-cplr-light",0);
-            setprop("sim/model/f15/instrumentation/nav/gs-in-range", 0);
-            setprop("sim/model/f15/instrumentation/nav/gs-needle-deflection-norm",1);
-            setprop("sim/model/f15/instrumentation/nav/heading-needle-deflection-norm",1);
-            setprop("sim/model/f15/instrumentation/nav/signal-quality-norm",0);
-            setprop("sim/model/f15/instrumentation/nav/gs-distance", 0);
+
+# Use the standard civilian ILS as no carrier tuned.
+            setprop("sim/model/f15/instrumentation/nav/gs-in-range", getprop("instrumentation/nav/gs-in-range"));
+            setprop("sim/model/f15/instrumentation/nav/gs-distance", getprop("instrumentation/nav/gs-distance"));
+            setprop("sim/model/f15/instrumentation/nav/gs-needle-deflection-norm",getprop("instrumentation/nav/gs-needle-deflection-norm"));
+            setprop("sim/model/f15/instrumentation/nav/heading-needle-deflection-norm",getprop("instrumentation/nav/heading-needle-deflection-norm"));
+            setprop("sim/model/f15/instrumentation/nav/signal-quality-norm",getprop("instrumentation/nav/signal-quality-norm"));
+
         }
         return;
     }
@@ -287,42 +298,47 @@ var select_key_ecm_nav = func {
 
 # Save fuel state ###############
 var bingo      = props.globals.getNode("sim/model/f15/controls/fuel/bingo", 1);
-var fwd_lvl    = props.globals.getNode("consumables/fuel/tank[0]/level-lbs", 1); # fwd group 4700 lbs
-var aft_lvl    = props.globals.getNode("consumables/fuel/tank[1]/level-lbs", 1); # aft group 4400 lbs
-var Lbb_lvl    = props.globals.getNode("consumables/fuel/tank[2]/level-lbs", 1); # left beam box 1250 lbs
-var Lsp_lvl    = props.globals.getNode("consumables/fuel/tank[3]/level-lbs", 1); # left sump tank 300 lbs
-var Rbb_lvl    = props.globals.getNode("consumables/fuel/tank[4]/level-lbs", 1); # right beam box 1250 lbs
-var Rsp_lvl    = props.globals.getNode("consumables/fuel/tank[5]/level-lbs", 1); # right sump tank 300 lbs
-var Lw_lvl     = props.globals.getNode("consumables/fuel/tank[6]/level-lbs", 1); # left wing tank 2000 lbs
-var Rw_lvl     = props.globals.getNode("consumables/fuel/tank[7]/level-lbs", 1); # right wing tank 2000 lbs
-var Le_lvl     = props.globals.getNode("consumables/fuel/tank[8]/level-lbs", 1); # left external tank 2000 lbs
-var Re_lvl     = props.globals.getNode("consumables/fuel/tank[9]/level-lbs", 1); # right external tank 2000 lbs
-var fwd_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[0]/level-gal_us", 1);
-var aft_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[1]/level-gal_us", 1);
-var Lbb_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[2]/level-gal_us", 1);
-var Lsp_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[3]/level-gal_us", 1);
-var Rbb_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[4]/level-gal_us", 1);
-var Rsp_lvl_gal_us    = props.globals.getNode("consumables/fuel/tank[5]/level-gal_us", 1);
-var Lw_lvl_gal_us     = props.globals.getNode("consumables/fuel/tank[6]/level-gal_us", 1);
-var Rw_lvl_gal_us     = props.globals.getNode("consumables/fuel/tank[7]/level-gal_us", 1);
-var Le_lvl_gal_us     = props.globals.getNode("consumables/fuel/tank[8]/level-gal_us", 1);
-var Re_lvl_gal_us     = props.globals.getNode("consumables/fuel/tank[9]/level-gal_us", 1);
-aircraft.data.add(	bingo,
-					fwd_lvl, aft_lvl, Lbb_lvl, Lsp_lvl, Rbb_lvl, Rsp_lvl, Lw_lvl,
-					Rw_lvl, Le_lvl, Re_lvl,
-					fwd_lvl_gal_us, aft_lvl_gal_us, Lbb_lvl_gal_us, Lsp_lvl_gal_us,
-					Rbb_lvl_gal_us, Rsp_lvl_gal_us, Lw_lvl_gal_us, Rw_lvl_gal_us,
-					Le_lvl_gal_us, Re_lvl_gal_us,
-					"sim/model/f15/systems/external-loads/station[2]/type",
-					"sim/model/f15/systems/external-loads/station[7]/type",
-					"consumables/fuel/tank[8]/selected",
-					"consumables/fuel/tank[9]/selected",
-					"sim/model/f15/systems/external-loads/external-tanks",
-					"sim/weight[1]/weight-lb","sim/weight[6]/weight-lb"
-				);
 
+aircraft.data.add(	
+    "sim/model/f15/controls/fuel/bingo",
+    "consumables/fuel/tank[0]/level-lbs",
+    "consumables/fuel/tank[1]/level-lbs",
+    "consumables/fuel/tank[2]/level-lbs",
+    "consumables/fuel/tank[3]/level-lbs",
+    "consumables/fuel/tank[4]/level-lbs",
+    "consumables/fuel/tank[5]/level-lbs",
+    "consumables/fuel/tank[6]/level-lbs",
+    "consumables/fuel/tank[7]/level-lbs",
+    "consumables/fuel/tank[8]/level-lbs",
+    "consumables/fuel/tank[9]/level-lbs",
+    "consumables/fuel/tank[0]/level-gal_us",
+    "consumables/fuel/tank[1]/level-gal_us",
+    "consumables/fuel/tank[2]/level-gal_us",
+    "consumables/fuel/tank[3]/level-gal_us",
+    "consumables/fuel/tank[4]/level-gal_us",
+    "consumables/fuel/tank[5]/level-gal_us",
+    "consumables/fuel/tank[6]/level-gal_us",
+    "consumables/fuel/tank[7]/level-gal_us",
+    "consumables/fuel/tank[8]/level-gal_us",
+    "consumables/fuel/tank[9]/level-gal_us",
 
+    "consumables/fuel/tank[5]/selected",
+    "consumables/fuel/tank[6]/selected",
+    "consumables/fuel/tank[7]/selected",
 
+    "/payload/weight[0]/selected",
+    "/payload/weight[1]/selected",
+    "/payload/weight[2]/selected",
+    "/payload/weight[3]/selected",
+    "/payload/weight[4]/selected",
+    "/payload/weight[5]/selected",
+    "/payload/weight[6]/selected",
+    "/payload/weight[7]/selected",
+    "/payload/weight[8]/selected",
+    "/payload/weight[9]/selected",
+    "/payload/weight[10]/selected",
+    "sim/model/f15/systems/external-loads/external-load-set"
+    );
 
 var g_max   = props.globals.getNode("sim/model/f15/instrumentation/g-meter/g-max", 1);
 var g_min   = props.globals.getNode("sim/model/f15/instrumentation/g-meter/g-min", 1);
@@ -348,28 +364,63 @@ var g_min_max = func {
 	GMaxMav.setValue(g_max_mav);
 }
 
-# VDI #####################
+# VSD #####################
 var ticker = props.globals.getNode("sim/model/f15/instrumentation/ticker", 1);
-aircraft.data.add("sim/model/f15/controls/VDI/brightness",
-	"sim/model/f15/controls/VDI/contrast",
-	"sim/model/f15/controls/VDI/on-off",
-	"sim/hud/visibility[0]",
-	"sim/hud/visibility[1]",
-	"sim/model/f15/controls/hud/on-off",
-	"sim/model/f15/controls/HSD/on-off",
-	"sim/model/f15/controls/pilots-displays/mode/aa-bt",
-	"sim/model/f15/controls/pilots-displays/mode/ag-bt",
-	"sim/model/f15/controls/pilots-displays/mode/cruise-bt",
-	"sim/model/f15/controls/pilots-displays/mode/ldg-bt",
-	"sim/model/f15/controls/pilots-displays/mode/to-bt",
-	"sim/model/f15/controls/pilots-displays/hsd-mode-nav");
+aircraft.data.add("sim/model/f15/controls/VSD/brightness",
+	"sim/model/f15/controls/VSD/contrast",
+                  "sim/model/f15/controls/VSD/on-off",
+                  "controls/lighting/anti-collision-switch",
+                  "controls/lighting/aux-inst",
+                  "controls/lighting/aux-instr-console",
+                  "controls/lighting/beacon",
+                  "controls/lighting/dome-norm",
+                  "controls/lighting/eng-inst",
+                  "controls/lighting/flt-inst",
+                  "controls/lighting/hook-bypass",
+                  "controls/lighting/index-norm",
+                  "controls/lighting/instruments-norm",
+                  "controls/lighting/l-console",
+                  "controls/lighting/r-console",
+                  "controls/lighting/l-console-eff-norm",
+                  "controls/lighting/r-console-eff-norm",
+                  "controls/lighting/landing-lights",
+                  "controls/lighting/logo-lights",
+                  "controls/lighting/nav-lights",
+                  "controls/lighting/panel-norm",
+                  "controls/lighting/position-flash-switch",
+                  "controls/lighting/position-tail-switch",
+                  "controls/lighting/position-wing-switch",
+                  "controls/lighting/standby-inst",
+                  "controls/lighting/stby-inst",
+                  "controls/lighting/strobe",
+                  "controls/lighting/taxi-light",
+                  "controls/lighting/turn-off-lights",
+                  "controls/lighting/warn-caution",
+                  "sim/model/f15/lights/radio2-brightness",
+                  "sim/multiplay/generic/int[1]", # lighting external see f15-common.xml for details
+                  "sim/multiplay/generic/int[3]",
+                  "sim/multiplay/generic/int[4]",
+                  "sim/multiplay/generic/int[5]",
+                  "sim/multiplay/generic/int[6]",
+                  "sim/hud/visibility[0]",
+                  "sim/hud/visibility[1]",
+                  "sim/model/f15/controls/fuel/display-selector",
+                  "sim/model/f15/controls/hud/on-off",
+                  "sim/model/f15/controls/HSD/on-off",
+                  "sim/model/f15/instrumentation/hud/mode-aa",
+                  "sim/model/f15/instrumentation/hud/mode-ag",
+                  "sim/model/f15/instrumentation/hud/mode-to",
+                  "sim/model/f15/instrumentation/hud/mode-ldg",
+                  "instrumentation/nav[0]/frequencies/selected-mhz",
+                  "sim/model/f15/instrumentation/ils/volume-norm",
+                  "sim/model/instrumentation/vhf/mode",
+                  "fdm/jsbsim/fcs/pitch-damper-enable",
+                  "fdm/jsbsim/fcs/roll-damper-enable",
+                  "fdm/jsbsim/fcs/yaw-damper-enable",
+                  "sim/model/f15/controls/MPCD/mode",
+                  "sim/model/f15/controls/windshield-heat",
+                  "controls/pilots-displays/hsd-mode-nav");
 
-var inc_ticker = func {
-	# ticker used for VDI background continuous translation animation
-	var tick = ticker.getValue();
-	tick += 1 ;
-	ticker.setDoubleValue(tick);
-}
 
 # Air Speed Indicator #####
 aircraft.data.add("sim/model/f15/instrumentation/airspeed-indicator/safe-speed-limit-bug");
@@ -481,19 +532,20 @@ instruments_data_export = func {
 	# CDI
 	var cdi = sprintf( "%01.2f", HsdCdiDeflection.getValue());
 	var radial = VtcRadialDeg.getValue();
-
-	var l_s = [ias, s_mach, fuel_total, tc_mode, tc_bearing, tc_in_range, tc_range, steer_mode_code, cdi, radial];
+var powered="0";
+    if ( getprop("/fdm/jsbsim/systems/electrics/ac-essential-bus1") > 0)
+        powered="1";
+	var l_s = [ias, s_mach, fuel_total, tc_mode, tc_bearing, tc_in_range, tc_range, steer_mode_code, cdi, radial, powered,
+sprintf("%d",getprop("engines/engine[0]/egt-degC")),
+sprintf("%d",getprop("engines/engine[1]/egt-degC")),
+sprintf("%d",getprop("engines/engine[0]/fuel-flow_pph")),
+sprintf("%d",getprop("engines/engine[1]/fuel-flow_pph")),
+sprintf("%d",getprop("consumables/fuel/total-fuel-lbs")),
+];
 	var str = "";
 	foreach( s ; l_s ) {
 		str = str ~ s ~ ";";
 	}
-    #
-    # aircraft powered - for the back seater this is a yes/no
-    if ( getprop("/fdm/jsbsim/systems/electrics/ac-essential-bus1") > 0)
-        str = str ~ "1" ~ ";";
-    else
-        str = str ~ "0" ~ ";";
-
 	InstrString.setValue(str);
 
 	#InstrString2.setValue(sprintf( "%01.0f", RangeRadar2.getValue()));
@@ -523,12 +575,11 @@ var main_loop = func {
 
 	if ( ( a ) == int( a )) {
 		# done each 0.1 sec, cnt even.
-		inc_ticker();
 		tacan_update();
         ara_63_update();
 		update_hud();
 		g_min_max();
-		update_chrono();
+		f15_chronograph.update_chrono();
 
 		if (( cnt == 6 ) or ( cnt == 12 )) {
 			# done each 0.3 sec.
@@ -682,6 +733,15 @@ var common_init = func {
         setprop("sim/model/f15/controls/AFCS/altitude",0);
         setprop("sim/model/f15/controls/AFCS/heading-gt",0);
         setprop("sim/model/f15/controls/AFCS/engage",0);
+        if (getprop("sim/model/f15/controls/windshield-heat") != nil)
+            setprop("fdm/jsbsim/systems/ecs/windshield-heat",getprop("sim/model/f15/controls/windshield-heat"));
+
+#
+# this is just to ensure that we start with pressure in the util hyds
+        setprop("fdm/jsbsim/systems/hydraulics/util-system-preload-input",-500);
+        settimer(func {
+                     setprop("fdm/jsbsim/systems/hydraulics/util-system-preload-input",0); 
+                        }, 4);
         if (getprop("/fdm/jsbsim/position/h-agl-ft") != nil)
         {
             if (getprop("/fdm/jsbsim/position/h-agl-ft") < 500) 
@@ -716,11 +776,11 @@ var common_init = func {
 # Init ####################
 var init = func {
 	print("Initializing f15 Systems");
-#	ext_loads_init();
+	ext_loads_init();
 	init_fuel_system();
 	aircraft.data.load();
-#	f15_net.mp_network_init(1);
-#	weapons_init();
+	f15_net.mp_network_init(1);
+	weapons_init();
 	ticker.setDoubleValue(0);
 	local_mag_deviation();
 	tacan_switch_init();
@@ -728,6 +788,8 @@ var init = func {
 	awg_9.init();
 #	an_arc_182v.init();
 #	an_arc_159v1.init();
+    aircraft.setup_als_lights();
+
 	setprop("controls/switches/radar_init", 0);
 	# properties to be stored
 	foreach (var f_tc; TcFreqs.getChildren()) {
@@ -737,7 +799,6 @@ var init = func {
     common_init();
     if ( ! main_loop_launched ) {
         settimer(main_loop, 0.5);
-#        settimer(external_load_loop, 3);
         main_loop_launched = 1;
     }
 }
@@ -774,16 +835,16 @@ setprop("sim/model/f15/lighting/warn-medium-lights-switch/enabled", 1);
 # Where group is the parent node that contains the radio state nodes as children.
 
 sel_displays_main_mode = func(group, which) {
-setprop("sim/model/instrumentation/hud-mode-aa",0);
-setprop("sim/model/instrumentation/hud-mode-ag",0);
-setprop("sim/model/instrumentation/hud-mode-to",0);
-setprop("sim/model/instrumentation/hud-mode-ldg",0);
-setprop("sim/model/instrumentation/hud-mode-crs",0);
-print("set mode ",group~which);
-setprop(group~"-"~which,1);
-#	foreach (var n; props.globals.getNode(group).getChildren()) {
-#		n.setBoolValue(n.getName() == which);
-#	}
+#setprop("sim/model/f15/instrumentation/hud/mode-aa",0);
+#setprop("sim/model/f15/instrumentation/hud/mode-ag",0);
+#setprop("sim/model/f15/instrumentation/hud/mode-to",0);
+#setprop("sim/model/f15/instrumentation/hud/mode-ldg",0);
+#setprop("sim/model/f15/instrumentation/hud/mode-crs",0);
+print("set mode ",group," ",which);
+#setprop(group~"-"~which,1);
+	foreach (var n; props.globals.getNode(group).getChildren()) {
+		n.setBoolValue(n.getName() == which);
+	}
 }
 
 sel_displays_sub_mode = func(group, which) {

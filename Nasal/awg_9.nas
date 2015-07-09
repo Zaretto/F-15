@@ -1,6 +1,13 @@
-# AWG-9 Radar routines.
+#
+# F-15 AWG-9 Radar routines.
+# ---------------------------
 # RWR (Radar Warning Receiver) is computed in the radar loop for better performance
 # AWG-9 Radar computes the nearest target for AIM-9.
+# Provides the 'tuned carrier' tacan channel support for ARA-63 emulation
+# ---------------------------
+# Richard Harrison (rjh@zaretto.com) 2014-11-23. Based on F-14b by xii
+#
+# 
 
 var ElapsedSec        = props.globals.getNode("sim/time/elapsed-sec");
 var SwpFac            = props.globals.getNode("sim/model/f15/instrumentation/awg-9/sweep-factor", 1);
@@ -42,7 +49,8 @@ var tmp_nearest_rng   = nil;
 var tmp_nearest_u     = nil;
 var nearest_rng       = 0;
 var nearest_u         = nil;
-
+var active_u = nil;
+var active_u_callsign = nil; # currently active callsign
 var our_true_heading  = 0;
 var our_alt           = 0;
 
@@ -68,11 +76,14 @@ var u_ecm_signal_norm = 0;
 var u_radar_standby   = 0;
 var u_ecm_type_num    = 0;
 var FD_TAN3DEG = 0.052407779283; # tan(3)
+var sel_next_target = 0;
+var sel_prev_target = 0;
 
 init = func() {
 	var our_ac_name = getprop("sim/aircraft");
-
+our_ac_name = "f15c";
 	my_radarcorr = radardist.my_maxrange( our_ac_name ); # in kilometers
+#print("ac ",our_ac_name," my_radarcorr ",my_radarcorr);
 	if (our_ac_name == "f15-bs") { we_are_bs = 1; }
 	}
 
@@ -100,7 +111,7 @@ var az_scan = func() {
 	# Antena az scan. Angular speed is constant but angle covered varies (120 or 60 deg ATM).
 	var fld_frac = az_fld / 120;                    # the screen (and the max scan angle) covers 120 deg, but we may use less (az_fld).
 	var fswp_spd = swp_spd / fld_frac;              # So the duration (fswp_spd) of a complete scan will depend on the fraction we use.
-	swp_fac = math.sin(cnt * fswp_spd) * fld_frac;  # Build a sinusoïde, each step based on a counter incremented by the main UPDATE_PERIOD
+	swp_fac = math.sin(cnt * fswp_spd) * fld_frac;  # Build a sinusoude, each step based on a counter incremented by the main UPDATE_PERIOD
 	SwpFac.setValue(swp_fac);                       # Update this value on the property tree so we can use it for the sweep line animation.
 	swp_deg = az_fld / 2 * swp_fac;                 # Now get the actual deviation of the antenae in deg,
 	swp_dir = swp_deg < swp_deg_last ? 0 : 1;       # and the direction.
@@ -113,12 +124,24 @@ var az_scan = func() {
 	our_true_heading = OurHdg.getValue();
 	our_alt = OurAlt.getValue();
 
-	if (swp_dir != swp_dir_last) {
+#
+#
+# The radar sweep is simulated such that when the scan limit is reached it is reversed
+# and the mp list is rescanned. This means the contents of the radar list will be 
+# simulated in a realistic way - the target acquisition based on what's in the MP list will
+# be ok; the values (distance etc) will be read from the target list so these will be accurate
+# which isn't quite how radar works but it will be good enough for us.
+
+	if (swp_dir != swp_dir_last)
+    {
+#print("Sweep ",active_u, active_u_callsign);
 		# Antena scan direction change (at max: more or less every 2 seconds). Reads the whole MP_list.
 		# TODO: Visual glitch on the screen: the sweep line jumps when changing az scan field.
+
 		az_fld = AzField.getValue();
 		range_radar2 = RangeRadar2.getValue();
 		if ( range_radar2 == 0 ) { range_radar2 = 0.00000001 }
+
 		# Reset nearest_range score
 		nearest_u = tmp_nearest_u;
 		nearest_rng = tmp_nearest_rng;
@@ -129,7 +152,18 @@ var az_scan = func() {
 		var raw_list = Mp.getChildren();
         var carrier_located = 0;
 
-		foreach( var c; raw_list ) {
+if (active_u == nil or active_u.Callsign == nil or active_u.Callsign.getValue() == nil or active_u.Callsign.getValue() != active_u_callsign)
+{
+if (active_u != nil)
+#print("active_u callsign ",active_u.Callsign.getValue());
+#print("active_u ",active_u);
+#print("active_u_callsign ",active_u_callsign);
+#print("Active callsign becomes inactive");
+active_u = nil;
+}
+
+		foreach( var c; raw_list )
+        {
 			# FIXME: At that time a multiplayer node may have been deleted while still
 			# existing as a displayable target in the radar targets nodes.
 			var type = c.getName();
@@ -190,34 +224,38 @@ var az_scan = func() {
                 }
             }
 
-			if (type == "multiplayer" or type == "tanker" or type == "aircraft" and HaveRadarNode != nil) {
-				var u = Target.new(c);
-				u_ecm_signal      = 0;
-				u_ecm_signal_norm = 0;
-				u_radar_standby   = 0;
-				u_ecm_type_num    = 0;
-				if ( u.Range != nil ) {
-					var u_rng = u.get_range();
-					if (u_rng < range_radar2  and u.not_acting == 0 )
-                    {
-						u.get_deviation(our_true_heading);
+            var u = Target.new(c);
+            u_ecm_signal      = 0;
+            u_ecm_signal_norm = 0;
+            u_radar_standby   = 0;
+            u_ecm_type_num    = 0;
+            var u_rng = u.get_range();
+            if (u_rng != nil and (u_rng < range_radar2  and u.not_acting == 0 ))
+            {
+                u.get_deviation(our_true_heading);
 
-						if ( u.deviation > l_az_fld  and  u.deviation < r_az_fld ) {
-							append(tgts_list, u);
-						} else {
-							u.set_display(0);
-						}
-						ecm_on = EcmOn.getValue();
-						# Test if target has a radar. Compute if we are illuminated. This propery used by ECM
-						# over MP, should be standardized, like "ai/models/multiplayer[0]/radar/radar-standby".
-						if ( ecm_on and u.get_rdr_standby() == 0) {
-							rwr(u);	# TODO: override display when alert.
-						}
-					} else {
-						u.set_display(0);
-					}
-				}
-			}
+                if ( u.deviation > l_az_fld  and  u.deviation < r_az_fld ) 
+                {
+                    u.set_display(1);
+                } 
+                else
+                {
+                    u.set_display(0);
+                }
+#                if (type == "multiplayer" or type == "tanker" or type == "aircraft" and HaveRadarNode != nil) 
+                if (type == "multiplayer" or type == "tanker" or type == "aircraft") 
+                {
+                    append(tgts_list, u);
+                    ecm_on = EcmOn.getValue();
+                    # Test if target has a radar. Compute if we are illuminated. This propery used by ECM
+                    # over MP, should be standardized, like "ai/models/multiplayer[0]/radar/radar-standby".
+                    if ( ecm_on and u.get_rdr_standby() == 0) {
+                        rwr(u);	# TODO: override display when alert.
+                    }
+                }
+            } else {
+                u.set_display(0);
+            }
 		}
         #
         # we do this after the loop to keep the old value valid whilst figuring out the new one.
@@ -233,8 +271,10 @@ var az_scan = func() {
 		ecm_alert2 = 0;
 	}
 
+    var idx = 0;
 
-	foreach( u; tgts_list ) {
+	foreach( u; tgts_list )
+    {
 		var u_display = 0;
 		var u_fading = u.get_fading() - fading_speed;
 
@@ -252,39 +292,140 @@ var az_scan = func() {
 			if ( u_rng < horizon and radardist.radis(u.string, my_radarcorr))
             {
 
-				# Compute mp position in our DDD display. (Bearing/horizontal + Range/Vertical).
+# Compute mp position in our DDD display. (Bearing/horizontal + Range/Vertical).
 				u.set_relative_bearing( ddd_screen_width / az_fld * u.deviation );
 				var factor_range_radar = 0.0657 / range_radar2; # 0.0657m : length of the distance range on the DDD screen.
 				u.set_ddd_draw_range_nm( factor_range_radar * u_rng );
 				u_fading = 1;
 				u_display = 1;
 
-				# Compute mp position in our TID display. (PPI like display, normaly targets are displayed only when locked.)
+# Compute mp position in our TID display. (PPI like display, normaly targets are displayed only when locked.)
 				factor_range_radar = 0.15 / range_radar2; # 0.15m : length of the radius range on the TID screen.
 				u.set_tid_draw_range_nm( factor_range_radar * u_rng );
 
-				# Compute first digit of mp altitude rounded to nearest thousand. (labels).
+# Compute first digit of mp altitude rounded to nearest thousand. (labels).
 				u.set_rounded_alt( rounding1000( u.get_altitude() ) / 1000 );
 
-				# Compute closure rate in Kts.
+# Compute closure rate in Kts.
 				u.get_closure_rate();
 
-				# Check if u = nearest echo.
-				if ( tmp_nearest_rng == nil or u_rng < tmp_nearest_rng)
+                #
+# ensure that the currently selected target
+# remains the active one.
+                var callsign="**";
+
+                if (u.Callsign != nil)
+                    callsign=u.Callsign.getValue();
+
+                if (u.airbone)
                 {
-					tmp_nearest_u = u;
-					tmp_nearest_rng = u_rng;
+                    if (active_u_callsign != nil and u.Callsign != nil and u.Callsign.getValue() == active_u_callsign)
+                    {
+                        active_u = u;
+#                        printf("%2d: found active_u %s %d",idx, callsign, u_rng);
+                    }
+                }
+                idx=idx+1;
+# Check if u = nearest echo.
+				if ( u_rng != 0 and (tmp_nearest_rng == nil or u_rng < tmp_nearest_rng))
+                {
+                    if(u.airbone)
+                    {
+					    tmp_nearest_u = u;
+    					tmp_nearest_rng = u_rng;
+                    }
 				}
 			}
 			u.set_display(u_display);
 		}
 		u.set_fading(u_fading);
-	}	
+        #
+        #
+        #
+
+        if (active_u != nil)
+        {
+            tmp_nearest_u = active_u;
+#            print("1:nearest u active ",active_u.Callsign.getValue()," ", active_u_callsign);
+        }
+        else
+        {
+            if (nearest_u != nil)
+            {
+                active_u_callsign = nearest_u.Callsign.getValue();
+            }
+            if (tmp_nearest_u != nil)
+            {
+                if (tmp_nearest_u.Callsign != nil)
+                    active_u_callsign = tmp_nearest_u.Callsign.getValue();
+                else
+                    active_u_callsign = nil;
+
+            }
+        }
+	}
+#    print("2:nearest u set  ",active_u_callsign);
+    var tgt_cmd = getprop("sim/model/f15/instrumentation/radar-awg-9/select-target");
+    setprop("sim/model/f15/instrumentation/radar-awg-9/select-target",0);
+    if (tgt_cmd != nil)
+    {
+        if (tgt_cmd > 0)
+            awg_9.sel_next_target=1;
+        else if (tgt_cmd > 0)
+            awg_9.sel_prev_target=1;
+#print("tgt cmd ",tgt_cmd);
+    }
+
+    if (awg_9.sel_next_target)
+    {
+        var dist  = 0;
+        if (awg_9.active_u != nil)
+        {
+            dist = awg_9.nearest_u.get_range();
+        }
+#            active_u = tgts_list[0];
+        print("Sel next target: dist=",dist);
+
+        var sorted_dist = sort (awg_9.tgts_list, func (a,b) {a.get_range()-b.get_range()});
+        var nxt=nil;
+        foreach (var u; sorted_dist) 
+        {
+            printf("TGT:: %5.2f (%5.2f) : %s ",u.get_range(), dist, u.Callsign.getValue());
+            if(u.Callsign.getValue() == active_u_callsign)
+            {
+                print("Skipping active target ",active_u_callsign);
+                continue;
+}
+            if(u.get_range() > dist)
+            {
+                nxt = u;
+                print("Located next ",nxt.Callsign.getValue(), nxt.get_range());
+                break;
+            }
+        }
+        if (nxt == nil)
+        {
+if(size(sorted_dist)>0)
+            nxt = sorted_dist[0];
+        }
+
+        if (nxt != nil)
+        {
+            active_u = nearest_u = tmp_nearest_u = nxt;
+            if (tmp_nearest_u.Callsign != nil)
+                active_u_callsign = tmp_nearest_u.Callsign.getValue();
+            else
+                active_u_callsign = nil;
+                
+            printf("nxt: %s %3.1f", nxt.Callsign.getValue(), nxt.get_range());
+        }
+        awg_9.sel_next_target =0;
+    }
+
 	swp_deg_last = swp_deg;
 	swp_dir_last = swp_dir;
 
     cnt += 0.05;
-
 }
 
 
@@ -297,13 +438,14 @@ var hud_nearest_tgt = func() {
 		#var u_elev_deg = (90 - nearest_u.get_total_elevation(our_pitch));
 		var u_dev_rad = (90 - nearest_u.get_deviation(our_true_heading)) * D2R;
 		var u_elev_rad = (90 - nearest_u.get_total_elevation(our_pitch)) * D2R;
+#print("nearest_u ",wcs_mode, nearest_u.get_range()," Display", nearest_u.get_display(), "dev ",nearest_u.deviation," ",l_az_fld," ",r_az_fld);
 		if (
 			wcs_mode == "tws-auto"
 			and nearest_u.get_display()
 			and nearest_u.deviation > l_az_fld
 			and nearest_u.deviation < r_az_fld
 		) {
-			var devs = develev_to_devroll(u_dev_rad, u_elev_rad);
+			var devs = aircraft.develev_to_devroll(u_dev_rad, u_elev_rad);
 			var combined_dev_deg = devs[0];
 			var combined_dev_length =  devs[1];
 			var clamped = devs[2];
@@ -316,9 +458,15 @@ var hud_nearest_tgt = func() {
 			# Clamp closure rate from -200 to +1,000 Kts.
 			var cr = nearest_u.ClosureRate.getValue();
 
-			if (cr < -200) { cr = 200 } elsif (cr > 1000) { cr = 1000 }
+			if (cr != nil)
+            {
+                if (cr < -200) 
+                    cr = 200;
+                else if (cr > 1000) 
+                    cr = 1000;
+    			HudTgtClosureRate.setValue(cr);
+            }
 
-			HudTgtClosureRate.setValue(cr);
 			HudTgtTDeg.setValue(combined_dev_deg);
 			HudTgtTDev.setValue(combined_dev_length);
 			HudTgtHDisplay.setBoolValue(1);
@@ -383,6 +531,12 @@ rwr = func(u) {
 		ecm_alert2 = 1;
 		u_ecm_signal_norm = 1;
 	}
+    #
+    # Set these again once the lights are done as need these for the RWR display.
+    u_ecm_signal = (-u_rng/20) + 2.6;
+    u_ecm_type_num = radardist.get_ecm_type_num(u_name);
+	
+    u.EcmSignal.setValue(u_ecm_signal);
 	u.EcmSignal.setValue(u_ecm_signal);
 	u.EcmSignalNorm.setIntValue(u_ecm_signal_norm);
 	u.EcmTypeNum.setIntValue(u_ecm_type_num);
@@ -493,9 +647,6 @@ wcs_mode_update = func() {
 }
 
 
-
-
-
 # Target class
 # ---------------------------------------------------------------------
 var Target = {
@@ -508,10 +659,54 @@ var Target = {
 		obj.type = c.getName();
 		obj.Valid = c.getNode("valid");
 		obj.Callsign = c.getNode("callsign");
+        obj.TAS = c.getNode("velocities/true-airspeed-kt");
+
+        if (obj.Callsign == nil or obj.Callsign.getValue() == "")
+        {
+            var signNode = c.getNode("sign");
+            if (signNode != nil)
+                obj.Callsign = signNode;
+        }
+
+
         obj.Model = c.getNode("model-short");
+        var model_short = c.getNode("sim/model/path");
+        if(model_short != nil)
+        {
+            var model_short_val = model_short.getValue();
+            if (model_short_val != nil and model_short_val != "")
+            {
+            var u = split("/", model_short_val); # give array
+            var s = size(u); # how many elements in array
+            var o = u[s-1];	 # the last element
+            var m = size(o); # how long is this string in the last element
+            var e = m - 4;   # - 4 chars .xml
+            obj.ModelType = substr(o, 0, e); # the string without .xml
+}
+else
+            obj.ModelType = "";
+        }
+else
+{
+            obj.ModelType = "";
+        }
+
 		obj.index = c.getIndex();
 		obj.string = "ai/models/" ~ obj.type ~ "[" ~ obj.index ~ "]";
 		obj.shortstring = obj.type ~ "[" ~ obj.index ~ "]";
+        obj.propNode = c;
+        if (c.getNode("position/latitude-deg") != nil)
+            obj.lat = c.getNode("position/latitude-deg").getValue();
+        if (c.getNode("position/longitude-deg") != nil)
+            obj.lon = c.getNode("position/longitude-deg").getValue();
+ 
+        if (obj.type == "multiplayer" or obj.type == "tanker" or obj.type == "aircraft" and obj.RdrProp != nil) 
+            obj.airbone = 1;
+        else
+            obj.airbone = 0;
+#        var pos = geo.Coord.new(); # FIXME: all of these should be instance variables
+#        obj.Position.set_latlon( lat,lon);
+
 #		obj.Callsign = getprop(obj.string~"/callsign");
 #print("callsign ",obj.Callsign.getValue());
 		
@@ -547,31 +742,45 @@ var Target = {
 		}	
 
 		obj.TgtsFiles = obj.InstrTgts.getNode(obj.shortstring, 1);
+        if (obj.RdrProp != nil)
+		{
+            obj.Range          = obj.RdrProp.getNode("range-nm");
+            obj.Bearing        = obj.RdrProp.getNode("bearing-deg");
+            obj.Elevation      = obj.RdrProp.getNode("elevation-deg");
+            obj.TotalElevation = obj.RdrProp.getNode("total-elevation-deg", 1);
+        }
+        else
+        {
+            obj.Range          = nil;
+            obj.Bearing        = nil;
+            obj.Elevation      = nil;
+            obj.TotalElevation = nil;
+        }
 
-		obj.Range          = obj.RdrProp.getNode("range-nm");
-		obj.Bearing        = obj.RdrProp.getNode("bearing-deg");
-		obj.Elevation      = obj.RdrProp.getNode("elevation-deg");
-		obj.TotalElevation = obj.RdrProp.getNode("total-elevation-deg", 1);
-		obj.BBearing       = obj.TgtsFiles.getNode("bearing-deg", 1);
-		obj.BHeading       = obj.TgtsFiles.getNode("true-heading-deg", 1);
-		obj.RangeScore     = obj.TgtsFiles.getNode("range-score", 1);
-		obj.RelBearing     = obj.TgtsFiles.getNode("ddd-relative-bearing", 1);
-		obj.Carrier        = obj.TgtsFiles.getNode("carrier", 1);
-		obj.EcmSignal      = obj.TgtsFiles.getNode("ecm-signal", 1);
-		obj.EcmSignalNorm  = obj.TgtsFiles.getNode("ecm-signal-norm", 1);
-		obj.EcmTypeNum     = obj.TgtsFiles.getNode("ecm_type_num", 1);
-		obj.Display        = obj.TgtsFiles.getNode("display", 1);
-		obj.Fading         = obj.TgtsFiles.getNode("ddd-echo-fading", 1);
-		obj.DddDrawRangeNm = obj.TgtsFiles.getNode("ddd-draw-range-nm", 1);
-		obj.TidDrawRangeNm = obj.TgtsFiles.getNode("tid-draw-range-nm", 1);
-		obj.RoundedAlt     = obj.TgtsFiles.getNode("rounded-alt-ft", 1);
-		obj.TimeLast       = obj.TgtsFiles.getNode("closure-last-time", 1);
-		obj.RangeLast      = obj.TgtsFiles.getNode("closure-last-range-nm", 1);
-		obj.ClosureRate    = obj.TgtsFiles.getNode("closure-rate-kts", 1);
-
+        if (obj.TgtsFiles != nil)
+        {
+            obj.BBearing       = obj.TgtsFiles.getNode("bearing-deg", 1);
+            obj.BHeading       = obj.TgtsFiles.getNode("true-heading-deg", 1);
+            obj.RangeScore     = obj.TgtsFiles.getNode("range-score", 1);
+            obj.RelBearing     = obj.TgtsFiles.getNode("ddd-relative-bearing", 1);
+            obj.Carrier        = obj.TgtsFiles.getNode("carrier", 1);
+            obj.EcmSignal      = obj.TgtsFiles.getNode("ecm-signal", 1);
+            obj.EcmSignalNorm  = obj.TgtsFiles.getNode("ecm-signal-norm", 1);
+            obj.EcmTypeNum     = obj.TgtsFiles.getNode("ecm_type_num", 1);
+            obj.Display        = obj.TgtsFiles.getNode("display", 1);
+            obj.Fading         = obj.TgtsFiles.getNode("ddd-echo-fading", 1);
+            obj.DddDrawRangeNm = obj.TgtsFiles.getNode("ddd-draw-range-nm", 1);
+            obj.TidDrawRangeNm = obj.TgtsFiles.getNode("tid-draw-range-nm", 1);
+            obj.RoundedAlt     = obj.TgtsFiles.getNode("rounded-alt-ft", 1);
+            obj.TimeLast       = obj.TgtsFiles.getNode("closure-last-time", 1);
+            obj.RangeLast      = obj.TgtsFiles.getNode("closure-last-range-nm", 1);
+            obj.ClosureRate    = obj.TgtsFiles.getNode("closure-rate-kts", 1);
+        }
 		obj.TimeLast.setValue(ElapsedSec.getValue());
-		obj.RangeLast.setValue(obj.Range.getValue());
-		# Radar emission status for other uthers of radar2.nas.
+        var cur_range = obj.get_range();
+        if (cur_range != nil and obj.RangeLast != nil)
+		    obj.RangeLast.setValue(obj.get_range());
+		# Radar emission status for other users of radar2.nas.
 		obj.RadarStandby = c.getNode("sim/multiplay/generic/int[2]");
 
 		obj.deviation = nil;
@@ -580,15 +789,24 @@ var Target = {
 	},
 	get_heading : func {
 		var n = me.Heading.getValue();
-		me.BHeading.setValue(n);
+        if (n != nil)
+		    me.BHeading.setValue(n);
 		return n;	},
 	get_bearing : func {
+        if (me.Bearing == nil)
+            return 0;
 		var n = me.Bearing.getValue();
-		me.BBearing.setValue(n);
+        if (n != nil)
+        {
+    		me.BBearing.setValue(n);
+        }
 		return n;
 	},
 	set_relative_bearing : func(n) {
 		me.RelBearing.setValue(n);
+	},
+	get_relative_bearing : func() {
+		return me.RelBearing.getValue();
 	},
 	get_reciprocal_bearing : func {
 		return geo.normdeg(me.get_bearing() + 180);
@@ -606,7 +824,27 @@ var Target = {
 		return me.deviation;
 	},
 	get_range : func {
-		return me.Range.getValue();
+        #
+        # range on carriers (and possibly other items) is always 0 so recalc.
+        if (me.Range == nil or me.Range.getValue() == 0)
+        {
+            if (me.propNode.getNode("position/global-x") != nil)
+            {
+                var x = me.propNode.getNode("position/global-x").getValue();
+                var y = me.propNode.getNode("position/global-y").getValue();
+                var z = me.propNode.getNode("position/global-z").getValue();
+
+                var tgt_pos = geo.Coord.new().set_xyz(x, y, z);
+#                print("Recalc range - ",tgt_pos.distance_to(geo.aircraft_position()));
+                return tgt_pos.distance_to(geo.aircraft_position()) * 0.000539957; # distance in NM
+            }
+            if (me.Range != nil)
+                return me.Range.getValue();
+        }
+        if (me.Range == nil)
+            return 0;
+        else
+            return me.Range.getValue();
 	},
 	get_horizon : func(own_alt) {
 		var tgt_alt = me.get_altitude();
@@ -618,9 +856,8 @@ var Target = {
 			}
 			if ( tgt_alt < 0 ) { tgt_alt = 0.001 }
 			return radardist.radar_horizon( own_alt, tgt_alt );
-		} else {
-			return(0);
 		}
+			return(0);
 	},
 	check_carrier_type : func {
 		var type = "none";
@@ -665,7 +902,36 @@ var Target = {
 	set_rounded_alt : func(n) {
 		me.RoundedAlt.setValue(n);
 	},
+    get_TAS: func(){
+        if (me.TAS != nil)
+        {
+            return me.TAS.getValue();
+        }
+        return 0;
+    },
 	get_closure_rate : func() {
+        #
+        # calc closure using trig as the elapsed time method is not really accurate enough and jitters considerably
+        if (me.TAS != nil)
+        {
+            var tas = me.TAS.getValue();
+            var our_hdg = getprop("orientation/heading-deg");
+            if(our_hdg != nil)
+            {
+                var bearing = me.get_deviation(our_hdg);
+                var vtrue_kts = getprop("fdm/jsbsim/velocities/vtrue-kts");
+                if (vtrue_kts != nil)
+                {
+                    var vec1 = vtrue_kts * math.cos( (bearing - our_hdg) / 57.29577950560105);
+                    var vec2 = tas * math.cos( (bearing - me.get_bearing()) / 57.29577950560105);
+                    return vec1-vec2;
+                }
+            }
+        }
+        else
+            print("NO TAS ",me.type," ",u.get_range(),u.Model, u.Callsign.getValue());
+        return 0;
+
 		var dt = ElapsedSec.getValue() - me.TimeLast.getValue();
 		var rng = me.Range.getValue();
 		var lrng = me.RangeLast.getValue();

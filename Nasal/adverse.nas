@@ -1,4 +1,13 @@
-# mocks effects of acceleration and flutter on the structure (wing).
+#
+# F-15 Adverse effectts.
+# ---------------------------
+# Models effects from acceleration and flutter on the wing.
+# Residual wing bending after large G will be reatined.
+# Fix airframe to reset damage.
+# ---------------------------
+# Richard Harrison (rjh@zaretto.com) 2014-11-23. Based on F-14b by xx
+#
+
 var WingBend = 0.0;
 var ResidualBend = 0.0;
 var MaxResidualBend = 0.3;
@@ -11,8 +20,11 @@ var UltimateFactor = 2;
 var UltimateMaxG = MaxG * UltimateFactor;
 var UltimateMinG = MinG * UltimateFactor;
 
-var ResidualBendFactor = MaxResidualBend / (UltimateMaxG - MaxG);
-var BendFactor = 0.66 / MaxG;
+var ResidualBendFactor = MaxResidualBend / UltimateMaxG;
+#var BendFactor = 0.66 / MaxG;
+var BendFactor = 0.16 / MaxG; # degrees of rotation * 7 per G
+var LeftWingTorn = false;
+var RightWingTorn = false;
 
 var fixAirframe = func {
 
@@ -25,17 +37,23 @@ var fixAirframe = func {
 }
 
 var computeWingBend = func {
-	var av_currentG = getprop ("sim/model/f15/instrumentation/g-meter/g-max-mooving-average");   
+	var av_currentG = getprop ("sim/model/f15/instrumentation/g-meter/g-max-mooving-average") - 1.0;   # adjust to loading
     if (av_currentG == nil) return;
 	#effects of normal acceleration
 
 	if (currentG >= MaxGreached) MaxGreached = av_currentG;
 	if (currentG <= MinGreached) MinGreached = av_currentG;
-	if (MaxGreached > MaxG and MaxGreached < UltimateMaxG) {
+	if (MaxGreached > MaxG and MaxGreached < UltimateMaxG)
+    {
 		ResidualBend = ResidualBendFactor * (MaxGreached - MaxG);
+        if (ResidualBend > MaxResidualBend)
+            ResidualBend = MaxResidualBend;
 	}
-	if (MinGreached < MinG and MinGreached > UltimateMinG) {
-		ResidualBend = ResidualBendFactor * (MaxGreached - MaxG);
+	else if (MinGreached < MinG and MinGreached > UltimateMinG)
+    {
+		ResidualBend = ResidualBendFactor * (MinGreached - MinG);
+        if (ResidualBend > MaxResidualBend)
+            ResidualBend = MaxResidualBend;
 	}
 	WingBend = ResidualBend + currentG * BendFactor;
 	setprop ("surface-positions/wing-fold-pos-norm", WingBend);

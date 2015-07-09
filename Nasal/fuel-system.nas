@@ -1,4 +1,8 @@
-# Replacement for fuel.nas for the f15 particular fuel system.
+# F-15 Fuel system 
+# ---------------------------
+# The main fuel computations are performed in JSBSim; these are support routines
+# ---------------------------
+# Richard Harrison (rjh@zaretto.com) Feb  2015 - based on F-14B version by Alexis Bory
 
 fuel.update = func{}; # disable the generic fuel updater
 
@@ -31,8 +35,6 @@ var WingExternal_R         = nil;
 var Centre_External      = nil;
 var Left_Proportioner  = nil;
 var Right_Proportioner = nil;
-var ext_select_state = 1;
-var Ext_Select_State = props.globals.getNode("consumables/fuel/tank[7]/selected",1);
 
 var neg_g = nil;
 
@@ -62,9 +64,6 @@ var fuel_dt = 0;
 var fuel_last_time = 0.0;
 
 var total = 0;
-var dump_valve = 0;
-var dumprate_lbs_hr = 90000; #1500 ppm
-var max_instant_dumprate_lbs = 1.45; # max instantaneous qty for low frame rates
 var refuel_rate_gpm = 450; # max refuel rate in gallons per minute at 50 psi pressure
 
 
@@ -87,7 +86,6 @@ var RightEngineRunning		= RightEngine.getNode("running", 1);
 LeftEngine.getNode("out-of-fuel", 1);
 RightEngine.getNode("out-of-fuel", 1);
 
-var DumpValve         = props.globals.getNode("sim/model/f15/controls/fuel/dump-valve", 1);
 var RprobeSw = props.globals.getNode("sim/model/f15/controls/fuel/refuel-probe-switch");
 var TotalFuelLbs  = props.globals.getNode("consumables/fuel/total-fuel-lbs", 1);
 var TotalFuelGals = props.globals.getNode("consumables/fuel/total-fuel-gals", 1);
@@ -105,7 +103,6 @@ var init_fuel_system = func {
 	}
 
 	#valves ("name",property, intitial status)
-	DumpValve = Valve.new("dump_valve","sim/model/f15/controls/fuel/dump-valve",0);
 
 	neg_g = Neg_g.new(0);
 
@@ -128,14 +125,14 @@ var Left = 0;
 var Both = -1;
 	#tanks ("name", number, initial connection status)
     # the order of these is significant for the set_fuel operation
-	Tank1     = Tank.new("Tank 1", 0, 1, Both);
-	Left_Feed      = Tank.new("L Feed", 1, 1, Left); 
-	Right_Feed      = Tank.new("R Feed", 2, 1, Right);
+	Tank1     = Tank.new("Tank 1", 2, 1, Both);
 	WingInternal_L   = Tank.new("Internal Wing L", 3, 1, Left);
-	WingInternal_R   = Tank.new("Internal Wing R", 4, 1, Left);
-	WingExternal_L   = Tank.new("External Wing L", 5, 1, Left);
-	WingExternal_R   = Tank.new("External Wing R", 6, 1, Left);
-	Centre_External  = Tank.newExternal("Centre External", 7, ext_select_state, Both); 
+	WingInternal_R   = Tank.new("Internal Wing R", 4, 1, Right);
+	Left_Feed      = Tank.new("L Feed", 0, 1, Left); 
+	Right_Feed      = Tank.new("R Feed", 1, 1, Right);
+	WingExternal_L   = Tank.newExternal("External Wing L", 5, 1, Left);
+	WingExternal_R   = Tank.newExternal("External Wing R", 6, 1, Right);
+	Centre_External  = Tank.newExternal("Centre External", 7, 1, Both); 
 }
 
 var build_new_proportioners = func {
@@ -161,19 +158,6 @@ var fuel_update = func {
 	max_flow36000 = 36000 * LBS_HOUR2GALS_PERIOD;
 	max_flow18000 = 18000 * LBS_HOUR2GALS_PERIOD; 
 	refuel_rate_gpm = 450; # max rate in gallons per minute at 50 psi pressure
-
-	ext_select_state = Ext_Select_State.getValue();
-
-	# Fuel Jettison
-	dump_valve = Valve.get("dump_valve");
-	if ( dump_valve and ( TotalFuelLbs.getValue() < 4300 ) ) { fuel_dump_off() }
-	if ( dump_valve ) {
-		Left_Proportioner.jettisonFuel(fuel_dt);
-		Right_Proportioner.jettisonFuel(fuel_dt);
-	} else {
-		Left_Proportioner.set_dumprate(0);
-		Right_Proportioner.set_dumprate(0);
-	}
 }
 
 
@@ -199,40 +183,106 @@ var calc_levels = func() {
 
     total_fuel_l = Lg + Lw;
     total_fuel_r = Rg + Rw;
-}
 
+    var sel_display = getprop("sim/model/f15/controls/fuel/display-selector");
+
+# FUEL QUANTITY SELECTOR KNOB
+    if (sel_display == 1)
+    {
+#FEED The fuel remaining in the respective engine feed tanks will be displayed.
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", Left_Feed.get_level_lbs());
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",Right_Feed.get_level_lbs()); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else if (sel_display == 2)
+    {
+#INT WING The fuel remaining in the respective internal wing tanks is displayed.
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", WingInternal_L.get_level_lbs());
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",WingInternal_R.get_level_lbs()); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else if (sel_display == 3)
+    {
+#TANK 1 The fuel remaining in tank 1 is displayed in the LEFT counter (RIGHT indicates zero).
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", Tank1.get_level_lbs());
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",0); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else if (sel_display == 4)
+    {
+#EXT WING The fuel remaining in the respective external wing tanks is displayed.
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", WingExternal_L.get_level_lbs());
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",WingExternal_R.get_level_lbs()); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else if (sel_display == 5)
+    {
+#EXT CTR The fuel remaining in the external centerline tank is displayed in the LEFT counter (RIGHT indicates zero).
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", Centre_External.get_level_lbs());
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",0); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else if (sel_display == 6)
+    {
+#CONF TANK The fuel remaining in the respective conformal tank is displayed.
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display",0); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",0); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",getprop("consumables/fuel/total-fuel-lbs"));
+    }
+    else
+    {
+        setprop("sim/model/f15/instrumentation/fuel-gauges/left-display", 6000);
+        setprop("sim/model/f15/instrumentation/fuel-gauges/right-display",600); 
+        setprop("sim/model/f15/instrumentation/fuel-gauges/total-display",6000);
+    }
+}
 
 
 # Controls
 # --------
 
-var fuel_dump_switch_toggle = func() {
-	var sw = getprop("sim/model/f15/controls/fuel/dump-switch");
-	if ( !sw ) {
-		setprop("sim/model/f15/controls/fuel/dump-switch", 1);
-		if (( !wow ) and (getprop("surface-positions/speedbrake-pos-norm") == 0 )) {
-			fuel_dump_on();
-		} else { settimer(func { fuel_dump_off() }, 0.1) } 
-	} else { fuel_dump_off() }
-} 
-var fuel_dump_on = func() {
-	Valve.set("dump_valve",1);
-	setprop("sim/multiplay/generic/int[0]", 1);
-}
-var fuel_dump_off = func() {
-	setprop("sim/model/f15/controls/fuel/dump-switch", 0);
-	Valve.set("dump_valve",0);
-	setprop("sim/multiplay/generic/int[0]", 0);
-}
-
-
-
+setlistener("sim/model/f15/controls/fuel/dump-switch", func(v) {
+    if (v != nil)
+    {
+        if (v.getValue())
+        {
+            print("Start  dump");
+            setprop("sim/multiplay/generic/int[0]", 1);
+            setprop("fdm/jsbsim/propulsion/fuel_dump",1);
+        }
+        else
+        { 
+            print("Stop dump");
+            setprop("sim/multiplay/generic/int[0]", 0);
+            setprop("fdm/jsbsim/propulsion/fuel_dump",0);
+        } 
+    }
+    else 
+    { 
+        print("no value");
+        setprop("sim/multiplay/generic/int[0]", 0);
+        setprop("fdm/jsbsim/propulsion/fuel_dump",0);
+    }
+});
 
 
 var r_probe = aircraft.door.new("sim/model/f15/refuel/", 1);
 var RprobePos        = props.globals.getNode("sim/model/f15/refuel/position-norm", 1);
 var RprobePosGeneric = props.globals.getNode("sim/multiplay/generic/float[6]",1);
 RprobePosGeneric.alias(RprobePos);
+
+setlistener("sim/model/f15/controls/fuel/refuel-probe-switch", func {
+    var v = getprop("sim/model/f15/controls/fuel/refuel-probe-switch");
+    if (v != nil)
+    {
+        if (v == 0)
+        {
+            r_probe.close();
+        }
+        else
+            r_probe.open();
+    }
+});
 
 var refuel_probe_switch_up = func() {
 	var sw = RprobeSw.getValue();
@@ -291,6 +341,7 @@ var internal_restore_fuel = func() {
 Tank = {
 	new : func (name, number, connect, side) {
 		var obj = { parents : [Tank]};
+        obj.external = 0;
 		obj.prop = props.globals.getNode("consumables/fuel").getChild ("tank", number , 1);
 #		obj.prop = props.globals.getNode("fdm/jsbsim/propulsion/tank").getChild ("tank", number , 1);
 #		obj.name = obj.prop.getNode("name", 1);
@@ -308,19 +359,18 @@ Tank = {
 		obj.selected = obj.prop.getNode("selected", 1);
 		obj.selected.setBoolValue(connect);
 		obj.ppg.setDoubleValue(6.3);
-        obj.external = 0;
 		append(Tank.list, obj);
 #		print("Tank.new[",number,"], ",obj.name," lbs=", obj.level_lbs.getValue());
 		return obj;
 	},
 	newExternal : func (name, number, connect, side) {
 		var obj = { parents : [Tank]};
+        obj.external = 1;
 		obj.prop = props.globals.getNode("consumables/fuel").getChild ("tank", number , 1);
 #		obj.prop = props.globals.getNode("fdm/jsbsim/propulsion/tank").getChild ("tank", number , 1);
 #		obj.name = obj.prop.getNode("name", 1);
         obj.side = side; # 1 is right; 0 is left.
 		obj.name = name;
-        obj.external = 1;
 		obj.prop.getChild("name", 0, 1).setValue(name);
 		obj.capacity = obj.prop.getNode("capacity-gal_us", 1);
 		obj.ppg = obj.prop.getNode("density-ppg", 1);
@@ -346,6 +396,16 @@ Tank = {
     is_external : func {
         return me.external;
     },
+    is_side : func(s) {
+        return me.side < 0 or me.side == s;
+    },
+    is_fitted : func {
+        if (!me.external) return true;
+        if (me.prop.getNode("selected").getValue())
+            return true;
+        return false;
+    },
+
 	get_capacity : func {
 		return me.capacity.getValue(); 
 	},
@@ -392,7 +452,7 @@ Tank = {
 		return (me.get_capacity() - me.get_level()) * me.ppg.getValue();
 	},
 	get_name : func () {
-		return me.name.getValue();
+		return me.name;
 	},
 	set_transfer_tank : func (fuel_dt, tank) {
 		foreach (var t; Tank.list) {
@@ -606,10 +666,10 @@ var set_fuel = func(total) {
             var t = Tank.list[tank_idx];
             #
 # only consider non external tanks; or external tanks when connected.
-            print("Processing ",t.name," is ext ",t.is_external());
-            if (!t.is_external() or getprop("sim/model/f15/systems/external-loads/external-tanks"))
+            print("Processing ",t.name," is fitted ",t.is_fitted());
+            if (t.is_fitted()) # true for internal; only true when external connected
             {
-                if (t.get_side() == i)
+                if (t.is_side(i))
                 {
                     if (delta < 0)
                     {
