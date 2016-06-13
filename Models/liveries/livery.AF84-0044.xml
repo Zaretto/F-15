@@ -3,13 +3,13 @@
     <sim>
         <model>
             <livery>
-                <name type="string">Lakenheath AF86-0182</name>
+                <name type="string">LN AF84-0044</name>
                 <index type="int">0</index>
-                <texture>liveries/livery.AF86-182.png</texture>
+                <texture>liveries/livery.AF84-0044.png</texture>
             </livery>
 
             <livery-patch>
-                <name type="string">Lakenheath AF86-0182</name>
+                <name type="string">LN AF84-0044</name>
                 <index type="int">0</index>
                 <texture>liveries/patch.lakenheath.png</texture>
             </livery-patch>
