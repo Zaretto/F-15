@@ -306072,7 +306072,7 @@ kids 0
 OBJECT poly
 name "WindscreenCanopyFrame"
 loc -1.48437 -0.00799406 0.0568774
-texture "livery.png"
+texture "Liveries/livery.AF80-0007.jpg"
 crease 45.000000
 locked
 numvert 275
@@ -308866,7 +308866,7 @@ kids 0
 OBJECT poly
 name "Canopy"
 loc 0.537199 0.095246 0.0571882
-texture "livery.png"
+texture "Liveries/livery.AF80-0007.jpg"
 crease 45.000000
 hidden
 numvert 776
