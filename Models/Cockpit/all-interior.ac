@@ -36,6 +36,7 @@ MATERIAL "ac3dmat1" rgb 0 0 0  amb 0 0 0  emis 0 0 0  spec 0 0 0  shi 0  trans 1
 MATERIAL "ac3dmat1.001" rgb 1 1 1  amb 0.2 0.2 0.2  emis 0 0 0  spec 0.1 0.1 0.1  shi 50  trans 0
 MATERIAL "ac3dmat1" rgb 1 1 1  amb 0.2 0.2 0.2  emis 0 0 0  spec 0.2 0.2 0.2  shi 50  trans 0
 MATERIAL "white" rgb 1 1 1  amb 1 1 1  emis 1 1 1  spec 0.2 0.2 0.2  shi 59  trans 0
+MATERIAL "MPCD" rgb 0 0 0  amb 0 0 0  emis 0 0 0  spec 0.2 0.2 0.2  shi 128  trans 0
 OBJECT world
 kids 46
 OBJECT poly
@@ -41369,7 +41370,7 @@ numvert 4
 0 -0.0678114 -0.0700745
 numsurf 1
 SURF 0x10
-mat 9
+mat 37
 refs 4
 0 1 1
 1 0 1
