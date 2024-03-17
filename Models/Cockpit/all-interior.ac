@@ -39,7 +39,7 @@ MATERIAL "ac3dmat1" rgb 1 1 1  amb 0.2 0.2 0.2  emis 0 0 0  spec 0.2 0.2 0.2  sh
 MATERIAL "white" rgb 1 1 1  amb 1 1 1  emis 1 1 1  spec 0.2 0.2 0.2  shi 59  trans 0
 MATERIAL "MPCD" rgb 0 0 0  amb 0 0 0  emis 0 0 0  spec 0.2 0.2 0.2  shi 128  trans 0
 OBJECT world
-kids 61
+kids 60
 OBJECT poly
 name "lsp_tews-ics-switch"
 loc -3.92959 0.826474 -0.296712
@@ -5709,7 +5709,7 @@ refs 3
 kids 0
 OBJECT poly
 name "tews-panel-base"
-loc -0.659716 0.0598464 0.07792
+loc -0.662031 0.0598464 0.07792
 texture "all-interior.dds"
 crease 45.000000
 numvert 8
@@ -47299,7 +47299,7 @@ loc -5.70229 0.814493 0.495065
 kids 29
 OBJECT poly
 name "jett-knob"
-loc 0.0877533 0.037406 -0.293996
+loc 0.0141902 0.037406 -0.176719
 texture "all-interior.dds"
 crease 45.000000
 numvert 95
@@ -74974,7 +74974,7 @@ refs 4
 kids 0
 OBJECT poly
 name "compass-panel-top"
-loc -1.31188 0.168339 -0.01463
+loc -1.29811 0.168339 -0.01463
 texture "all-interior.dds"
 crease 45.000000
 numvert 72
@@ -75522,7 +75522,7 @@ refs 4
 kids 0
 OBJECT poly
 name "compass-panel-base"
-loc -1.31238 0.163521 -0.0148405
+loc -1.29861 0.163521 -0.0148405
 texture "all-interior.dds"
 crease 45.000000
 numvert 8
@@ -76274,7 +76274,7 @@ refs 4
 kids 0
 OBJECT poly
 name "compass-lat-knob"
-loc -1.30996 0.175304 -0.0561886
+loc -1.29619 0.175304 -0.0561886
 texture "all-interior.dds"
 crease 45.000000
 numvert 63
@@ -76789,7 +76789,7 @@ refs 3
 kids 0
 OBJECT poly
 name "compass-sync-knob"
-loc -1.30109 0.179052 0.0271434
+loc -1.28732 0.179052 0.0271434
 texture "all-interior.dds"
 crease 45.000000
 numvert 26
@@ -126567,7 +126567,7 @@ refs 3
 kids 0
 OBJECT poly
 name "compass-mode-knob"
-loc -1.30272 0.179232 -0.012204
+loc -1.28895 0.179232 -0.012204
 texture "all-interior.dds"
 crease 45.000000
 numvert 146
@@ -771903,22 +771903,8 @@ refs 3
 363 0.238344 0.131016
 kids 0
 OBJECT poly
-name "mpcd-jett-sel-axis"
-loc -5.68727 0.845876 0.31889
-crease 45.000000
-numvert 2
--0.030129 0 0
-0.030129 0 0
-numsurf 1
-SURF 0x32
-mat 1
-refs 2
-0 0 1
-1 1 0
-kids 0
-OBJECT poly
 name "jett-knob-axis"
-loc -5.68608 0.848473 -0.000420183
+loc -5.68608 0.848473 -0.000801385
 crease 45.000000
 numvert 2
 -0.0325484 0.000273705 0.31891
