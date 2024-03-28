@@ -117,11 +117,12 @@ var VSD_Device =
     obj.target_circle = obj.VSDsvg.getElementById("target_circle");
     obj.nofire_cross.setVisible(0);
     obj.target_circle.setVisible(0);
+
     if (obj.target_module_id != nil)
         obj.ground_speed_calculator = AIObjectGroundSpeedCalculator.new(obj.root_node);
     else
         obj.ground_speed_calculator = nil;
-        debug.dump(obj.ground_speed_calculator);
+
     for (var i = 0; i < obj.max_symbols; i += 1){
         var name = "target_friendly_"~i;
         var tgt = obj.VSDsvg.getElementById(name);
