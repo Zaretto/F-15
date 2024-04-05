@@ -49,7 +49,7 @@ RJH, 2019-10-24: Tuned Mil and Max power using:
 
     <milthrust> 14590.1 </milthrust>
     <maxthrust> 23762.305 </maxthrust>
-    <bypassratio>     0.36 </bypassratio>
+    <bypassratio>     0.63 </bypassratio>
     <tsfc>            0.73 </tsfc>
     <atsfc>           1.94  </atsfc>
     <bleed>           0.03</bleed>
