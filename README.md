@@ -4,14 +4,13 @@ Models F-15C, F-15D based on aerodynamic data from AFIT/GAE/ENY/90D-16
 
 Notes: 
 
-- F-15C in the critical aft c.g. configuration has a weight of 33,467
-pounds and a c.g. location at 563.1 inches (6:12). To
-convert c.g. location in inches to percent mean aerodynamic
-chord, the following equation is used for all A through D
-models of the F-15: (measurements in inches).
-% MAC = (xcg - 408.1 * 100) / 191.33
+### FDM notes
 
--  The original report AD-A217 366 refers to the aero being in body axes in a few places, but then also confusingly we have the comment "CFX = FORCE IN STABILITY AXES X DIRECTION (CD IN BODY AXIS). Having checked the equations of motion I can't find where the body axes to stability axes transformation is made so my conclusion is that probably the aero is in stability axes. This is further supported by testing that gives us much higher alpha at low speed. For example on approach clean, with 7000lbs of fuel at ISA with 140kts indicated alpha is around 21 degrees and we're looking at the sky. Performance testing for continuous rate turn was unattainable with body axes forces. The VSPAERO model was also in the stability axes and was a fair match to the aero model. Unless I can find some other data that is more definitive I'm fairly confident that the original aero data is in the stasbility axes - it is simply a confusion in the report. See commit 932ae119, a9191f7a, 6def237d, 4b740f2b, 35f9e2af
+- The original report AD-A217 366 refers to the aero being in body axes in a few places, but then also confusingly we have the comment "CFX = FORCE IN STABILITY AXES X DIRECTION (CD IN BODY AXIS). Having checked the equations of motion I can't find where the body axes to stability axes transformation is made so my conclusion is that probably the aero is in stability axes. This is further supported by testing that gives us much higher alpha at low speed. For example on approach clean, with 7000lbs of fuel at ISA with 140kts indicated alpha is around 21 degrees and we're looking at the sky. Performance testing for continuous rate turn was unattainable with body axes forces. The VSPAERO model was also in the stability axes and was a fair match to the aero model. Unless I can find some other data that is more definitive I'm fairly confident that the original aero data is in the stasbility axes - it is simply a confusion in the report. See commit 932ae119, a9191f7a, 6def237d, 4b740f2b, 35f9e2af
+
+- F-15C in the critical aft c.g. configuration has a weight of 33,467 pounds and a c.g. location at 563.1 inches (6:12). 
+To convert c.g. location in inches to percent mean aerodynamic chord, the following equation is used for all A through D
+models of the F-15: (measurements in inches). % MAC = (xcg - 408.1 * 100) / 191.33
 
 - The performance has been matched using refs for F100-PW-220 perf data; reports TM-86042, TM-104278, AFRL-PR-WP-TR-1999-2069, NASA TP-1228, NASA  TP-1482, NASA TP-1373, NASA-TM-83446) max rate turn and level flight accel now match, see 0280adf8
 
@@ -26,14 +25,56 @@ models of the F-15: (measurements in inches).
 
 ### V1.12
 
-* TEWS improvements
-* VSD improvements
-* MPCD SIT map rewrite
-* Emesary damage
-* Hyds, JFS simulation model improved
-* aero model improved for flaps.
-* nasal performance improvements
-* weapons, radar updates.
+  Major Features & Improvements
+
+  Flight Systems
+
+  - Flight Control System (FCS): Removed changes made in 2019 (V1.9) and refined
+  based on Eagle Talk data for better Control Augmentation System (CAS) and normal operation
+  - Engine Simulation: Enhanced F100-PW-100/220 engine modeling to model overheat conditions and fire
+  with improved augmentation rendering.
+  - Hydraulics & JFS: Improved simulation models for hydraulic systems and Jet Fuel Starter
+
+  Avionics & Displays
+
+  - TEWS (Tactical Electronic Warfare System): Significant improvements to threat warning display
+  - VSD (Vertical Situation Display): Enhanced functionality and readability
+  - MPCD (Multi-Purpose Color Display): Complete rewrite of SIT (Situation) map display for better readability
+  - HUD (Head-Up Display): Fixed HDR compatibility and IAS speed tape issues
+
+  Weapons & Combat Systems
+
+  - Emesary Damage System: Integrated advanced damage modeling
+  - Combat Jettison: Added emergency stores jettison capability (MPCD)
+  - Radar Systems: Updated radar functionality with keyboard standby toggle fix
+  - Weapons Integration: Updated missile and bomb systems
+
+  Visual & Lighting
+
+  - External Lighting: Fixed lighting system for Compositor, Rembrandt, and ALS renderers
+  - Smoke Effects: Corrected smoke trail rendering
+  - Liveries: Multiple livery fixes and additions, including new Rayonix livery
+
+  Performance & Compatibility
+
+  - Nasal Performance: Optimized script performance across multiple systems
+  - FlightGear 2018.3: minimum version
+  - Aerodynamics: Enhanced flap modeling and aerodynamic improvements
+
+  Bug Fixes
+
+  - Fixed incorrect rolling moment due to aileron deflection (#1)
+  - Resolved livery display issues (#207)
+  - Fixed nose wheel steering (NWS) and wheel rotation
+  - Corrected external lights rendering across different graphics pipelines
+  - Fixed smoke trail effects
+  - Resolved HUD display issues with HDR rendering
+
+  Documentation
+
+  - Added comprehensive README with technical notes
+  - Added engine overheat documentation
+  - Improved flight dynamics model documentation
 
 #### detailed change log
 
@@ -63,7 +104,6 @@ models of the F-15: (measurements in inches).
 + 2021-05-20 : Added failure mode for fire-control.
 + 2021-05-20 : Added GBU-10 Paveway II laser guided bombs. Added bomb release sound.
 + 2021-05-20 : Fix the ccippipper was rotating opposite.
-+ 2021-05-20 : Fix same bug
 + 2021-05-20 : Fixed uncommmented line
 + 2021-05-20 : Wing inboard station pylon/rack weight now again done in JSBSim.
 + 2021-05-15 : Added training configuration (#83)
