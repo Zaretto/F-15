@@ -19,7 +19,7 @@ var HSDblepFontSize  = 24; # 15;
 var HSDlargeFontSize = 36; # 25;
 var HSDfontSize      = 24; # 16;
 var HSDlineWidth     =  6; # 1.5;
-var HSDfontFace      = "notosansmono-black.ttf";        
+var HSDfontFace      = "LiberationFonts/LiberationSans-Bold.ttf";
 
 #
 # Menu Id's:

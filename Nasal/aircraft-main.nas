@@ -11,9 +11,9 @@ HUDFont =  VSDFont = TEWSFont = MPCDFont = stdFont;
 var canvas_font_mapper = func(family, weight) {
 #    print("font map ",family," ",weight);
     # return "HornetDisplay-Regular.ttf";
-    return "notosansmono-black.ttf";
-    return "HornetDisplay-Bold.ttf";
-    return "monoMMM_5.ttf";
+    #return "notosansmono-black.ttf";
+    #return "HornetDisplay-Bold.ttf";
+    #return "monoMMM_5.ttf";
     return "LiberationFonts/LiberationSans-Bold.ttf";
 };
 var mpcd_font_mapper = func(family, weight)  {return MPCDFont;}
@@ -184,9 +184,9 @@ setprop("controls/flight/cas-roll",0);
 #var vsplash_precision = 0.001;
 var splash_vec_loop = func
 {
-    var v_x = getprop("fdm/jsbsim/velocities/u-aero-fps");
-    var v_y = getprop("fdm/jsbsim/velocities/v-aero-fps");
-    var v_z = getprop("fdm/jsbsim/velocities/w-aero-fps");
+    var v_x = getprop("fdm/jsbsim/velocities/u-aero-fps") or 0;
+    var v_y = getprop("fdm/jsbsim/velocities/v-aero-fps") or 0;
+    var v_z = getprop("fdm/jsbsim/velocities/w-aero-fps") or 0;
 #    var v_x = getprop("velocities/uBody-fps");
 #    var v_y = getprop("velocities/vBody-fps");
 #    var v_z = getprop("velocities/wBody-fps");
