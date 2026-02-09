@@ -24,6 +24,11 @@ var VtcRadialDeg     = Vtc.getNode("radials/selected-deg");
 var HsdFromFlag      = Hsd.getNode("from-flag", 1);
 var HsdToFlag        = Hsd.getNode("to-flag", 1);
 var HsdCdiDeflection = Hsd.getNode("needle-deflection", 1);
+var Cdi              = props.globals.getNode("sim/model/f15/instrumentation/cdi", 1);
+var CdiFromFlag      = Cdi.getNode("from-flag", 1);
+var CdiToFlag        = Cdi.getNode("to-flag", 1);
+var CdiDeflection    = Cdi.getNode("needle-deflection", 1);
+var TcInRange        = Tc.getNode("in-range", 1);
 var TcXYSwitch       = props.globals.getNode("sim/model/f15/instrumentation/tacan/xy-switch", 1);
 var TcModeSwitch     = props.globals.getNode("sim/model/f15/instrumentation/tacan/mode", 1);
 var ownship_pos = geo.Coord.new();
@@ -424,15 +429,45 @@ var AircraftModule =
             }
             else if (frame_count == 4) {
                  awg_9.hud_nearest_tgt();
-                
+
                  if ( notification.ArmSysRunning ) {
                      armament_update();
                  }
                  armament_update2();
             }
-            # else if (frame_count == 6) {
-            #     afcs_filters();
-            # }
+            else if (frame_count == 6) {
+                # TACAN CDI calculation - compute course deviation for HSI
+                if (TcInRange.getBoolValue()) {
+                    var selected_crs = VtcRadialDeg.getValue() or 0;
+                    var tacan_brg = TcMagHdg.getValue() or 0;
+
+                    # Calculate deviation: how far off-course we are
+                    # Deviation is the difference between selected course and bearing TO station
+                    var deviation = geo.normdeg180(selected_crs - tacan_brg);
+
+                    if (math.abs(deviation) <= 90) {
+                        # Flying toward the station (TO)
+                        CdiToFlag.setBoolValue(1);
+                        CdiFromFlag.setBoolValue(0);
+                        # CDI deflection: positive = fly right, negative = fly left
+                        var deflection = math.clamp(deviation, -10, 10);
+                        CdiDeflection.setValue(deflection);
+                    } else {
+                        # Flying away from the station (FROM)
+                        CdiToFlag.setBoolValue(0);
+                        CdiFromFlag.setBoolValue(1);
+                        # Flip the deviation for FROM indication
+                        var from_dev = geo.normdeg180(deviation + 180);
+                        var deflection = math.clamp(from_dev, -10, 10);
+                        CdiDeflection.setValue(deflection);
+                    }
+                } else {
+                    # TACAN not in range - clear flags and center needle
+                    CdiToFlag.setBoolValue(0);
+                    CdiFromFlag.setBoolValue(0);
+                    CdiDeflection.setValue(0);
+                }
+            }
         }
     },
 };
