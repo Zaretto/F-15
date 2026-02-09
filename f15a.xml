@@ -760,14 +760,14 @@
                 <default value="0" />
                 <test value="1">
                     gear/unit[0]/wheel-speed-fps le 221
-                    systems/hydraulics/combined-system-pressure ne 0
+                    systems/hydraulics/util-pressure ne 0
                     position/aircraft-on-ground ne 0
                     systems/holdback/launchbar-engaged eq 0
                     fcs/steer-maneuver ne 0
                 </test>
                 <test value="2">
                     gear/unit[0]/wheel-speed-fps le 221
-                    systems/hydraulics/combined-system-pressure ne 0
+                    systems/hydraulics/util-pressure ne 0
                     position/aircraft-on-ground ne 0
                     systems/holdback/launchbar-engaged eq 0
                 </test>

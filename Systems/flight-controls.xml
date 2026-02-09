@@ -289,7 +289,7 @@
         <switch name="fcs/pitch-ratio">
 			<default value="fcs/pitch-ratio-calc"/>
 			<test logic="OR" value="0.5">
-				systems/hydraulics/flight-system-pressure ne 1
+				systems/hydraulics/util-pressure ne 1
 				fcs/pitch-ratio-emergency ne 0
 			</test>
 		</switch>
@@ -334,6 +334,7 @@
             <description>Roll ratio actual</description>
             <default value="fcs/roll-ratio-dmd" />
             <test value="0.5" logic="OR">
+                systems/hydraulics/util-pressure ne 1
                 fcs/roll-ratio-emergency ne 0
             </test>
             <test value="1" logic="OR">
@@ -455,7 +456,7 @@
         <switch name="fcs/pitch-trim-actuator">
             <default value="fcs/pitch-trim-sum"/>
             <test value="fcs/pitch-trim-actuator">
-                systems/hydraulics/flight-system-pressure ne 1
+                systems/hydraulics/flight-controls-pressure ne 1
             </test>
         </switch>
 
@@ -639,7 +640,7 @@
         <switch name="fcs/roll-trim-actuator-norm">
             <default value="fcs/roll-trim-sum-norm"/>
             <test value="fcs/roll-trim-actuator-norm">
-                systems/hydraulics/flight-system-pressure ne 1
+                systems/hydraulics/flight-controls-pressure ne 1
             </test>
         </switch>
 
@@ -865,7 +866,7 @@
         <switch name="fcs/rudder-pos-norm-0">
             <default value="fcs/rudder-pos-norm"/>
             <test value="fcs/rudder-pos-norm-0">
-                systems/hydraulics/flight-system-pressure ne 1
+                systems/hydraulics/flight-controls-pressure ne 1
             </test>
         </switch>
         <lead_lag_filter name="fcs/rudder-pos-norm">
@@ -886,11 +887,11 @@
         <switch name="fcs/flap-total-dmd">
             <default value="0"/>
             <test value="fcs/flap-total-dmd">
-                systems/hydraulics/combined-system-pressure ne 1
+                systems/hydraulics/util-pressure ne 1
             </test>
             <test value="fcs/flap-cmd-norm">
                 fcs/flap-cmd-norm ne 0
-                systems/hydraulics/combined-system-pressure ne 0
+                systems/hydraulics/util-pressure ne 0
             </test>
             <clipto>
                 <min> 0 </min>
@@ -955,7 +956,7 @@ emerg operation.
         <switch name="systems/hydraulics/emerg-gear-unlocked">
             <default value="0"/>
             <test value="1">
-                systems/hydraulics/util-system-accumulator-psi gt 200
+                systems/hydraulics/jfs-accumulator-psi gt 200
                 gear/emergency-handle gt 0.7
                 gear/unit[0]/locked ne 0
             </test>
@@ -1228,10 +1229,10 @@ emerg operation.
                 gear/emergency-handle lt 1
             </test>
             <test value="gear/gear-dmd-norm">
-                systems/hydraulics/combined-system-pressure ne 1
+                systems/hydraulics/util-pressure ne 1
             </test>
             <test value="gear/gear-cmd-norm">
-                systems/hydraulics/combined-system-pressure ne 0
+                systems/hydraulics/util-pressure ne 0
             </test>
             <clipto>
                 <min> 0 </min>
@@ -1260,10 +1261,10 @@ emerg operation.
         <switch name="fcs/speedbrake-dmd-norm">
             <default value="0"/>
             <test value="fcs/speedbrake-dmd-norm">
-                systems/hydraulics/combined-system-pressure ne 1
+                systems/hydraulics/util-pressure ne 1
             </test>
             <test value="fcs/speedbrake-cmd-norm">
-                systems/hydraulics/combined-system-pressure ne 0
+                systems/hydraulics/util-pressure ne 0
             </test>
             <clipto>
                 <min> 0 </min>

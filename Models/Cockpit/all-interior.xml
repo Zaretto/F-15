@@ -9906,7 +9906,7 @@
     <name>hyd-1</name>
     <type>rotate</type>
     <object-name>needle-hyd-1</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/combined-system-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/pc1-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>
@@ -9930,7 +9930,7 @@
     <name>hyd-2</name>
     <type>rotate</type>
     <object-name>needle-hyd-2</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/flight-system-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/pc2-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>
@@ -9954,7 +9954,7 @@
     <name>hyd-3</name>
     <type>rotate</type>
     <object-name>needle-hyd-3</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/util-system-accumulator-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/util-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>
@@ -19176,7 +19176,7 @@
     <name>hyd-1</name>
     <type>rotate</type>
     <object-name>eg_needle-hyd-1</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/combined-system-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/pc1-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>
@@ -19200,7 +19200,7 @@
     <name>hyd-2</name>
     <type>rotate</type>
     <object-name>eg_needle-hyd-2</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/flight-system-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/pc2-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>
@@ -19224,7 +19224,7 @@
     <name>hyd-3</name>
     <type>rotate</type>
     <object-name>eg_needle-hyd-3</object-name>
-    <property>fdm/jsbsim/systems/hydraulics/util-system-accumulator-psi</property>
+    <property>fdm/jsbsim/systems/hydraulics/util-psi</property>
     <interpolation>
       <entry>
         <ind>0</ind>

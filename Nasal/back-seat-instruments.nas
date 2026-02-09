@@ -168,8 +168,9 @@ var init = func {
     setprop("fdm/jsbsim/systems/electrics/lgenerator-kva",75);
     setprop("fdm/jsbsim/systems/electrics/rgenerator-kva",75);
     setprop("fdm/jsbsim/systems/electrics/transrect-online",2);
-    setprop("fdm/jsbsim/systems/hydraulics/combined-system-psi",2398);
-    setprop("fdm/jsbsim/systems/hydraulics/flight-system-psi",2396);
+    setprop("fdm/jsbsim/systems/hydraulics/pc1-psi",3000);
+    setprop("fdm/jsbsim/systems/hydraulics/pc2-psi",3000);
+    setprop("fdm/jsbsim/systems/hydraulics/util-psi",3000);
     setprop("engines/engine[0]/oil-pressure-psi", 28);
     setprop("engines/engine[1]/oil-pressure-psi", 28);
 

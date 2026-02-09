@@ -70,8 +70,9 @@ var dlg_lighting  = gui.Dialog.new("dialog[3]","Aircraft/F-15/Dialogs/lighting.x
     setprop("fdm/jsbsim/systems/electrics/lgenerator-kva",75);
     setprop("fdm/jsbsim/systems/electrics/rgenerator-kva",75);
     setprop("fdm/jsbsim/systems/electrics/transrect-online",2);
-    setprop("fdm/jsbsim/systems/hydraulics/combined-system-psi",2398);
-    setprop("fdm/jsbsim/systems/hydraulics/flight-system-psi",2396);
+    setprop("fdm/jsbsim/systems/hydraulics/pc1-psi",3000);
+    setprop("fdm/jsbsim/systems/hydraulics/pc2-psi",3000);
+    setprop("fdm/jsbsim/systems/hydraulics/util-psi",3000);
     setprop("engines/engine[0]/oil-pressure-psi", 28);
     setprop("engines/engine[1]/oil-pressure-psi", 28);
 
@@ -160,8 +161,9 @@ var runEMMISC = func {
 # 3.> M 0.9 Ramp movement is minimized by actuator spool valves and the aerodynamic load profile
 #  in this Mach range and a RAMP light should illuminate
 
-    if(getprop("fdm/jsbsim/systems/hydraulics/combined-system-psi") < 2100 or 
-       getprop("fdm/jsbsim/systems/hydraulics/flight-system-psi") < 2100)
+    if(getprop("fdm/jsbsim/systems/hydraulics/pc1-psi") < 2100 or
+       getprop("fdm/jsbsim/systems/hydraulics/pc2-psi") < 2100 or
+       getprop("fdm/jsbsim/systems/hydraulics/util-psi") < 2100)
     {
 		if (!ca_hyd_press_light.getBoolValue())
 		{
@@ -244,7 +246,7 @@ var runEMMISC = func {
 
 #
 # Inlet ramps.
-    if(!getprop("fdm/jsbsim/systems/hydraulics/combined-system-pressure"))
+    if(!getprop("fdm/jsbsim/systems/hydraulics/util-pressure"))
     {
         if (!ca_l_inlet_light.getBoolValue())
         {
@@ -260,7 +262,7 @@ var runEMMISC = func {
             ca_l_inlet_light.setBoolValue(0);
         }
     }
-    if(!getprop("fdm/jsbsim/systems/hydraulics/flight-system-pressure"))
+    if(!getprop("fdm/jsbsim/systems/hydraulics/util-pressure"))
     {
         if (!ca_r_inlet_light.getBoolValue())
         {
@@ -587,23 +589,7 @@ var electricsFrame = func {
     runEMMISC();
 }
 
-#
-#
-# hyd transfer switch - this will activate the bidi pump. 
-setlistener("sim/model/f15/controls/hyds/hyd-transfer-pump-switch", func {
-    var v = getprop("sim/model/f15/controls/hyds/hyd-transfer-pump-switch");
-    if(v != nil)
-    {
-        if (v)
-        {
-            setprop("fdm/jsbsim/systems/hydraulics/hyd-transfer-pump-switch", 0);
-        }
-        else
-        {
-            setprop("fdm/jsbsim/systems/hydraulics/hyd-transfer-pump-switch", 1);
-        }
-    }
-}, 1, 0);
+
 
 var set_console_lighting = func
 {
@@ -681,20 +667,6 @@ setlistener("sim/model/f15/controls/electrics/emerg-gen-switch", func {
         {
             setprop("fdm/jsbsim/systems/electrics/emerg-generator-status", 0);
         }
-    }
-}, 1, 0);
-
-setlistener("sim/model/f15/controls/electrics/emerg-flt-hyd-switch", func {
-    var guard = getprop("sim/model/f15/controls/electrics/emerg-flt-hyd-guard-lever");
-    var v = getprop("sim/model/f15/controls/electrics/emerg-flt-hyd-switch");
-
-    if (!guard)
-    {
-        setprop("sim/model/f15/controls/electrics/emerg-flt-hyd-switch",0);
-    }
-    if(v != nil)
-    {
-        setprop("fdm/jsbsim/systems/hydraulics/emerg-flyt-hyd-switch", v);
     }
 }, 1, 0);
 

@@ -7,10 +7,10 @@
       <switch name="systems/hook/tailhook-dmd-norm">
           <default value="0"/>
            <test value="systems/hook/tailhook-dmd-norm">
-              systems/hydraulics/combined-system-pressure ne 1
+              systems/hydraulics/util-pressure ne 1
           </test>
           <test value="systems/hook/tailhook-cmd-norm">
-              systems/hydraulics/combined-system-pressure ne 0
+              systems/hydraulics/util-pressure ne 0
           </test>
           <clipto>
               <min> 0 </min>

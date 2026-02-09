@@ -248,28 +248,28 @@
                 </hook>
                     
                 <hydraulics>
-                    <bidi-activation>2100</bidi-activation>
-                    <!-- the min pressure is really for when no hydraulic fluid and the pressure has been at that level
-                     for more than 10 seconds, so for now we will not model this as there is no way for fluid to be depleted -->
-                    <bidi-cutoff-min-pressure>-500</bidi-cutoff-min-pressure>
-                    <bidi-normal-pressure>2500</bidi-normal-pressure>
-                    <b-system-psi type="double"/>
-                    <combined-system-pressure type="double"/>
-                    <combined-system-pump-failed>0</combined-system-pump-failed>
-                    <combined-system-psi type="int">2200</combined-system-psi>
-                    <emerg-flyt-hyd-switch>0</emerg-flyt-hyd-switch>
+                    <!-- PC1: Power Control 1, left AMAD pump -->
+                    <pc1-psi type="int">3000</pc1-psi>
+                    <pc1-pressure type="double">1</pc1-pressure>
+                    <pc1-pump-failed>0</pc1-pump-failed>
+                    <!-- PC2: Power Control 2, right AMAD pump -->
+                    <pc2-psi type="int">3000</pc2-psi>
+                    <pc2-pressure type="double">1</pc2-pressure>
+                    <pc2-pump-failed>0</pc2-pump-failed>
+                    <!-- Tandem actuator boolean: either PC adequate -->
+                    <flight-controls-pressure type="double">1</flight-controls-pressure>
+                    <!-- Utility: L pump (left AMAD, 3000psi) + R pump (right AMAD, 2775psi) -->
+                    <util-psi type="int">3000</util-psi>
+                    <util-pressure type="double">1</util-pressure>
+                    <util-left-pump-failed>0</util-left-pump-failed>
+                    <util-right-pump-failed>0</util-right-pump-failed>
+                    <util-left-normal-pressure>3000</util-left-normal-pressure>
+                    <util-right-normal-pressure>2775</util-right-normal-pressure>
+                    <!-- Shared -->
+                    <normal-pressure>3000</normal-pressure>
                     <emerg-gear-bleed>0</emerg-gear-bleed>
-                    <emerg-pump-auto-activation>2100</emerg-pump-auto-activation>
-                    <emerg-pump-auto-deactivation>2400</emerg-pump-auto-deactivation>
-                    <emerg-system-pump-failed>0</emerg-system-pump-failed>
-                    <flight-system-pump-failed>0</flight-system-pump-failed>
-                    <flight-system-psi type="int">2200</flight-system-psi>
-                    <hyd-transfer-pump-switch>1</hyd-transfer-pump-switch>
                     <jfs-bleed>0</jfs-bleed>
-                    <normal-pressure>3022</normal-pressure>
-                    <reservoir-quantity>25</reservoir-quantity>
                     <jfs-accumulator-psi>2000</jfs-accumulator-psi>
-
                 </hydraulics>
                 <NWS>
                     <engaged />
@@ -711,11 +711,11 @@
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/hydraulics/combined-system-psi</property>
+                    <property type="string">fdm/jsbsim/systems/hydraulics/pc1-psi</property>
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/hydraulics/flight-system-psi</property>
+                    <property type="string">fdm/jsbsim/systems/hydraulics/pc2-psi</property>
                 </signal>
                 <signal>
                     <type>float</type>
