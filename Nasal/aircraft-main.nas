@@ -440,7 +440,7 @@ setprop("fdm/jsbsim/propulsion/set-running",0);
 
 var cold_and_dark = func()
 {
-	setprop("sim/model/f15/controls/electrics/emerg-gen-switch",9);
+	setprop("sim/model/f15/controls/electrics/emerg-gen-switch",3);
 	setprop("sim/model/f15/controls/electrics/r-gen-switch",0);
 
     setprop("controls/engines/engine[0]/cutoff",1-getprop("controls/engines/engine[0]/cutoff"));

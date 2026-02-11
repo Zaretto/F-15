@@ -1105,7 +1105,7 @@
             <condition>
                 <property>fdm/jsbsim/systems/cadc/gear-warning-tone</property>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1130,7 +1130,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                                 <greater-than>
@@ -1156,7 +1156,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                                 <greater-than>
@@ -1182,7 +1182,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                                 <greater-than>
@@ -1208,7 +1208,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                                 <greater-than>
@@ -1238,7 +1238,7 @@
                     <value>2</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1267,7 +1267,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1297,7 +1297,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1327,7 +1327,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1357,7 +1357,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1387,7 +1387,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1417,7 +1417,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1447,7 +1447,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1477,7 +1477,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>
@@ -1507,7 +1507,7 @@
                     <value>0</value>
                 </greater-than>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <greater-than>

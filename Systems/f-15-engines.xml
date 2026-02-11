@@ -338,7 +338,7 @@
         <switch name="propulsion/amad-fire-test-ok">
             <default value="0" />
             <test value="1">
-                systems/electrics/egenerator-kva eq 1
+                systems/electrics/jfs-pmg-power eq 1
                 propulsion/fire-discharge-mode eq 0
                 propulsion/fire-extinguisher-level ne 0
             </test>

@@ -141,7 +141,7 @@
             <type>material</type>
             <condition>
                 <greater-than>
-                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                    <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                     <value>0</value>
                 </greater-than>
                 <not>
@@ -166,7 +166,7 @@
         <type>material</type>
         <condition>
             <greater-than>
-                <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                 <value>0</value>
             </greater-than>
             <not>
@@ -194,7 +194,7 @@
                 <property>sim/model/f15/systems/armament/launch-light</property>
             </or>
             <greater-than>
-                <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                 <value>0</value>
             </greater-than>
         </condition>
@@ -208,7 +208,7 @@
                 <property>sim/model/f15/systems/armament/lock-light</property>
             </or>
             <greater-than>
-                <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                 <value>0</value>
             </greater-than>
         </condition>
@@ -228,7 +228,7 @@
                 </greater-than>
             </or>
             <greater-than>
-                <property>fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
+                <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                 <value>0</value>
             </greater-than>
         </condition>

@@ -1,40 +1,33 @@
 <?xml version="1.0"?>
 <!--
-        Description: F15 electrics system (based on F-14)
-        Notes: Generator on each engine (via CSD) with emergency hydruaulic generator
-        Author: Richard Harrison (rjh@zaretto.com)
-        References: F14-AAD-1 p2-68 to p2-76
-Main generators drop off at 55% N2. 
-Emergency generator drop off at 11-12% RPM.
-Engine ignition not available below 10%
-Emergency generator 1kva or kVa essential AC and Buses No1 and No2. and AFCS
-Bidi pump operating and pressure between 2000 and 1100 psi emerg will drop to 1kBVa mode and power only the essential AC and Dc No. 1 buses. If pressure subsequently increases the emergency generator must be cycle off/reset to norm
-Figure 14-5.
+        Description: F-15 Electrical System
+        Author: Richard Harrison (rjh@zaretto.com) 2014-11-23; rewritten 2024
+        References: TO 1F-15A-1, Figure FO-13 Electrical System Schematic
 
-AC Essential No.1 And No2 Phase A BUS 115 V AC
-AC Essential No.1 And No2 Phase B BUS 115 V AC
-AC Essential No.1 And No2 Phase C BUS 115 V AC
-AC Left Main Bus 115 V AC
-AC Right Main Bus 115 V AC
-DC Essential No.1 Bus 28 V DC
-DC Essential No.2 Bus 28 V DC
-DC Main Bus 28 V DC
+        Split-bus, non-synchronized architecture:
+        - LEFT/RIGHT AC main buses (115V AC, 75kVA each from CSD generators)
+        - Bus-tie contactor closes when one generator fails (single-gen operation)
+        - Per-side transformer-rectifiers (LEFT TR, RIGHT TR) provide 28V DC
+        - AC/DC essential buses fed from either side
+        - Emergency generator (5kVA from utility hydraulic AMAD) provides backup
+        - Emergency generator switch: OFF/AUTO/MAN/ISOLATE
+        - JFS PMG provides limited power during engine start (RPM/FTIT/ignition)
+        - No battery in the F-15
 
-main generators 75kva, 100A 28VDC
-emerg gen 5kva, 50A 28v, 
+        Generator on-line threshold: 44% N2 (per TO 1F-15A-1)
+        Emergency generator requires utility hydraulic pressure >= 1100 psi
+        Emergency generator auto-shuts down 30 sec after main gen restored (ground start)
+
+        AC buses output 115 (voltage) when powered, 0 when not.
+        DC buses output 28 (voltage) when powered, 0 when not.
     -->
-
 
 <system name="electrics">
 
-<!--
-AC Left Main Bus 115 V AC
-AC Right Main Bus 115 V AC
-DC Essential No.1 Bus 28 V DC
-DC Essential No.2 Bus 28 V DC
-DC Main Bus 28 V DC
--->
-  <channel name="electrical-system" execrate="4">
+  <!-- ============================================================ -->
+  <!-- Channel: generators                                          -->
+  <!-- ============================================================ -->
+  <channel name="generators" execrate="4">
 
       <switch name="systems/electrics/ground-power-available">
           <default value="0"/>
@@ -43,256 +36,425 @@ DC Main Bus 28 V DC
               velocities/u-fps lt 1
           </test>
       </switch>
+
       <switch name="systems/electrics/lgenerator-kva">
           <default value="0"/>
-          <test  logic="AND" value="75">
-            propulsion/engine[0]/n2 ge 55
-            systems/electrics/lgenerator-status eq 1
+          <test logic="AND" value="75">
+              propulsion/engine[0]/n2 ge 44
+              systems/electrics/lgenerator-status eq 1
           </test>
-    </switch>
-    <switch name="systems/electrics/rgenerator-kva">
-          <default value="0"/>
-          <test  logic="AND" value="75">
-            propulsion/engine[1]/n2 ge 55
-            systems/electrics/rgenerator-status eq 1
-          </test>
-    </switch>
-    <switch name="systems/electrics/egenerator-kva">
-          <default value="0"/>
-          <test  logic="AND" value="5">
-            systems/hydraulics/emerg-gen ne 0
-            systems/electrics/emerg-generator-status eq 1
-          </test>
-          <test  logic="AND" value="1">
-            propulsion/jfs-running gt 0
-            systems/electrics/emerg-generator-status eq 1
-            systems/electrics/lgenerator-kva lt 20
-            systems/electrics/rgenerator-kva lt 20
-          </test>
-    </switch>
+      </switch>
 
-    <switch name="systems/electrics/ac-essential-bus1">
+      <switch name="systems/electrics/rgenerator-kva">
           <default value="0"/>
-          <test  logic="OR" value="75">
-              systems/electrics/lgenerator-kva ne 0
-              systems/electrics/rgenerator-kva ne 0
-              systems/electrics/ground-power-available ne 0
+          <test logic="AND" value="75">
+              propulsion/engine[1]/n2 ge 44
+              systems/electrics/rgenerator-status eq 1
           </test>
-          <test  logic="AND" value="systems/electrics/egenerator-kva">
-            systems/electrics/egenerator-kva ne 0
-          </test>
-    </switch>
+      </switch>
 
-    <switch name="systems/electrics/ac-essential-bus2">
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: emergency-generator                                 -->
+  <!-- ============================================================ -->
+  <channel name="emergency-generator" execrate="4">
+
+      <!-- Map control switch to mode: 0=OFF, 1=AUTO, 2=MAN, 3=ISOLATE -->
+      <switch name="systems/electrics/emerg-gen-mode-internal">
           <default value="0"/>
-          <test  logic="OR" value="75">
-              systems/electrics/lgenerator-kva ne 0
-              systems/electrics/rgenerator-kva ne 0
-              systems/electrics/ground-power-available ne 0
+          <test value="systems/electrics/emerg-gen-mode">
+              systems/electrics/emerg-gen-mode ge 0
           </test>
-          <test  logic="AND" value="systems/electrics/egenerator-kva">
-            systems/electrics/egenerator-kva ne 0
-          </test>
-    </switch>
+      </switch>
 
-
-    <switch name="systems/electrics/ac-left-main-bus">
+      <!-- Emergency generator active logic -->
+      <switch name="systems/electrics/emerg-gen-active">
           <default value="0"/>
-          <test  logic="OR" value="75">
-              systems/electrics/lgenerator-kva ne 0
-              systems/electrics/rgenerator-kva ne 0
-              systems/electrics/ground-power-available ne 0
-          </test>
-          <test  logic="AND" value="systems/electrics/egenerator-kva">
-            systems/electrics/egenerator-kva gt 1
-          </test>
-    </switch>
-
-    <switch name="systems/electrics/ac-right-main-bus">
-          <default value="0"/>
-          <test  logic="OR" value="75">
-              systems/electrics/lgenerator-kva ne 0
-              systems/electrics/rgenerator-kva ne 0
-              systems/electrics/ground-power-available ne 0
-          </test>
-          <test  logic="AND" value="systems/electrics/egenerator-kva">
-            systems/electrics/egenerator-kva gt 1
-          </test>
-    </switch>
-
-    <switch name="systems/electrics/transrect-online">
-          <default value="0"/>
-          <test  logic="AND" value="2">
-                systems/electrics/lgenerator-kva ne 0
-                systems/electrics/rgenerator-kva ne 0
-          </test>
-          <test  logic="AND" value="2">
-              systems/electrics/ground-power-available ne 0
-          </test>
-          <test  logic="AND" value="2">
-                systems/electrics/egenerator-kva gt 0
-          </test>
-
-          <test  logic="AND" value="1">
-                systems/electrics/lgenerator-kva ne 0
-          </test>
-          <test  logic="AND" value="1">
-                systems/electrics/rgenerator-kva ne 0
-          </test>
-    </switch>
-
-    <switch name="systems/electrics/dc-essential-bus1">
-          <default value="0"/>
+          <!-- OFF mode: never active -->
           <test value="0">
-            systems/electrics/transrect-online eq 0
+              systems/electrics/emerg-gen-mode eq 0
           </test>
-          <test logic="OR" value="28">
-                systems/electrics/lgenerator-kva gt 0
-                systems/electrics/rgenerator-kva gt 0
-                systems/electrics/ground-power-available ne 0
-                systems/electrics/egenerator-kva gt 0
+          <!-- AUTO mode: activates when BOTH main gens fail, util hyd available -->
+          <test logic="AND" value="1">
+              systems/electrics/emerg-gen-mode eq 1
+              systems/electrics/lgenerator-kva lt 1
+              systems/electrics/rgenerator-kva lt 1
+              systems/hydraulics/util-psi ge 1100
           </test>
-    </switch>
+          <!-- MAN mode: activates when util hyd available (pilot-commanded) -->
+          <test logic="AND" value="1">
+              systems/electrics/emerg-gen-mode eq 2
+              systems/hydraulics/util-psi ge 1100
+          </test>
+          <!-- ISOLATE mode: activates when util hyd available -->
+          <test logic="AND" value="1">
+              systems/electrics/emerg-gen-mode eq 3
+              systems/hydraulics/util-psi ge 1100
+          </test>
+      </switch>
 
-    <switch name="systems/electrics/dc-essential-bus2">
+      <switch name="systems/electrics/egenerator-kva">
           <default value="0"/>
-          <test value="0">
-            systems/electrics/transrect-online eq 0
+          <!-- Full emergency generator output (5kVA) when active -->
+          <test value="5">
+              systems/electrics/emerg-gen-active eq 1
           </test>
-          <test logic="OR" value="28">
+          <!-- JFS PMG contribution (1kVA) when JFS running and emerg gen mode not OFF -->
+          <test logic="AND" value="1">
+              propulsion/jfs-running gt 0
+              systems/electrics/emerg-gen-mode ne 0
+          </test>
+      </switch>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: JFS PMG                                             -->
+  <!-- ============================================================ -->
+  <channel name="jfs-pmg" execrate="4">
+
+      <switch name="systems/electrics/jfs-pmg-power">
+          <default value="0"/>
+          <test value="1">
+              propulsion/jfs-running gt 0
+          </test>
+      </switch>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: bus-tie contactor                                   -->
+  <!-- ============================================================ -->
+  <channel name="bus-tie" execrate="4">
+
+      <!-- Bus-tie closes when exactly one main gen is on (single-gen operation)
+           or when ground power is connected (feeds both sides) -->
+      <switch name="systems/electrics/bus-tie-closed">
+          <default value="0"/>
+          <!-- Ground power feeds both sides -->
+          <test value="1">
+              systems/electrics/ground-power-available eq 1
+          </test>
+          <!-- Left gen on, right gen off: tie closes to power right side -->
+          <test logic="AND" value="1">
               systems/electrics/lgenerator-kva gt 0
-              systems/electrics/rgenerator-kva gt 0
-              systems/electrics/ground-power-available ne 0
-              systems/electrics/egenerator-kva gt 0
+              systems/electrics/rgenerator-kva lt 1
           </test>
-    </switch>
+          <!-- Right gen on, left gen off: tie closes to power left side -->
+          <test logic="AND" value="1">
+              systems/electrics/rgenerator-kva gt 0
+              systems/electrics/lgenerator-kva lt 1
+          </test>
+          <!-- Both gens on: split-bus, tie open -->
+          <!-- Both gens off: tie open (nothing to tie) -->
+      </switch>
 
-    <switch name="systems/electrics/dc-main-bus">
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: AC buses                                            -->
+  <!-- ============================================================ -->
+  <channel name="ac-buses" execrate="4">
+
+      <switch name="systems/electrics/ac-left-main-bus">
           <default value="0"/>
-          <test value="0">
-            systems/electrics/transrect-online eq 0
-          </test>
-          <test logic="OR" value="28">
+          <!-- Own generator -->
+          <test value="115">
               systems/electrics/lgenerator-kva gt 0
+          </test>
+          <!-- Cross-fed via bus-tie from right gen -->
+          <test logic="AND" value="115">
+              systems/electrics/bus-tie-closed eq 1
               systems/electrics/rgenerator-kva gt 0
-              systems/electrics/ground-power-available ne 0
           </test>
-          <test  logic="AND" value="28">
-            systems/electrics/egenerator-kva gt 1
-          </test>
-    </switch>
-            <switch name="systems/electrics/dc-main-bus-powered">
-          <default value="0"/>
-          <test value="1">
-              systems/electrics/dc-main-bus gt 0
+          <!-- Ground power -->
+          <test value="115">
+              systems/electrics/ground-power-available eq 1
           </test>
       </switch>
-      <switch name="systems/electrics/dc-essential-bus1-powered">
+
+      <switch name="systems/electrics/ac-right-main-bus">
           <default value="0"/>
-          <test value="1">
-              systems/electrics/dc-essential-bus1 gt 0
+          <!-- Own generator -->
+          <test value="115">
+              systems/electrics/rgenerator-kva gt 0
+          </test>
+          <!-- Cross-fed via bus-tie from left gen -->
+          <test logic="AND" value="115">
+              systems/electrics/bus-tie-closed eq 1
+              systems/electrics/lgenerator-kva gt 0
+          </test>
+          <!-- Ground power -->
+          <test value="115">
+              systems/electrics/ground-power-available eq 1
           </test>
       </switch>
-      <switch name="systems/electrics/dc-essential-bus2-powered">
+
+      <!-- Essential AC bus: powered from either main AC bus, or from
+           emergency generator (except in ISOLATE mode) -->
+      <switch name="systems/electrics/ac-essential-bus">
           <default value="0"/>
-          <test value="1">
-              systems/electrics/dc-essential-bus2 gt 0
-          </test>
-      </switch>
-      <switch name="systems/electrics/ac-right-main-bus-powered">
-          <default value="0"/>
-          <test value="1">
+          <test logic="OR" value="115">
+              systems/electrics/ac-left-main-bus gt 0
               systems/electrics/ac-right-main-bus gt 0
           </test>
+          <!-- Emergency gen (5kVA=115V) but NOT in ISOLATE mode
+               and only full emerg gen, not JFS-only (egenerator-kva must be > 1) -->
+          <test logic="AND" value="115">
+              systems/electrics/egenerator-kva gt 1
+              systems/electrics/emerg-gen-mode ne 3
+          </test>
       </switch>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: transformer-rectifiers                              -->
+  <!-- ============================================================ -->
+  <channel name="transformer-rectifiers" execrate="4">
+
+      <switch name="systems/electrics/left-tr-online">
+          <default value="0"/>
+          <test logic="AND" value="1">
+              systems/electrics/ac-left-main-bus gt 0
+              systems/electrics/left-tr-failed eq 0
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/right-tr-online">
+          <default value="0"/>
+          <test logic="AND" value="1">
+              systems/electrics/ac-right-main-bus gt 0
+              systems/electrics/right-tr-failed eq 0
+          </test>
+      </switch>
+
+      <!-- Backward-compatible count: 0, 1, or 2 TRs online -->
+      <fcs_function name="systems/electrics/transrect-online">
+          <function>
+              <sum>
+                  <property>systems/electrics/left-tr-online</property>
+                  <property>systems/electrics/right-tr-online</property>
+              </sum>
+          </function>
+      </fcs_function>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: DC buses                                            -->
+  <!-- ============================================================ -->
+  <channel name="dc-buses" execrate="4">
+
+      <switch name="systems/electrics/dc-left-bus">
+          <default value="0"/>
+          <test value="28">
+              systems/electrics/left-tr-online eq 1
+          </test>
+          <!-- Emergency gen backup when both TRs fail (AUTO/MAN only) -->
+          <test logic="AND" value="28">
+              systems/electrics/emerg-gen-active eq 1
+              systems/electrics/emerg-gen-mode ne 3
+              systems/electrics/transrect-online lt 1
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-right-bus">
+          <default value="0"/>
+          <test value="28">
+              systems/electrics/right-tr-online eq 1
+          </test>
+          <!-- Emergency gen backup when both TRs fail (AUTO/MAN only) -->
+          <test logic="AND" value="28">
+              systems/electrics/emerg-gen-active eq 1
+              systems/electrics/emerg-gen-mode ne 3
+              systems/electrics/transrect-online lt 1
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-essential-bus">
+          <default value="0"/>
+          <test logic="OR" value="28">
+              systems/electrics/dc-left-bus gt 0
+              systems/electrics/dc-right-bus gt 0
+          </test>
+          <!-- Emergency gen backup (AUTO/MAN only) -->
+          <test logic="AND" value="28">
+              systems/electrics/emerg-gen-active eq 1
+              systems/electrics/emerg-gen-mode ne 3
+          </test>
+      </switch>
+
+      <!-- Derived backward-compat property: powered when either L or R DC available -->
+      <switch name="systems/electrics/dc-main-bus">
+          <default value="0"/>
+          <test logic="OR" value="28">
+              systems/electrics/dc-left-bus gt 0
+              systems/electrics/dc-right-bus gt 0
+          </test>
+          <!-- Emergency gen backup (AUTO/MAN only) -->
+          <test logic="AND" value="28">
+              systems/electrics/emerg-gen-active eq 1
+              systems/electrics/emerg-gen-mode ne 3
+          </test>
+      </switch>
+
+      <!-- Emergency essential DC bus: powered in ALL emerg gen modes including ISOLATE -->
+      <switch name="systems/electrics/emerg-ess-dc-bus">
+          <default value="0"/>
+          <test value="28">
+              systems/electrics/emerg-gen-active eq 1
+          </test>
+      </switch>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: powered booleans                                    -->
+  <!-- ============================================================ -->
+  <channel name="powered-booleans" execrate="4">
+
       <switch name="systems/electrics/ac-left-main-bus-powered">
           <default value="0"/>
           <test value="1">
               systems/electrics/ac-left-main-bus gt 0
           </test>
       </switch>
-      <switch name="systems/electrics/ac-essential-bus1-powered">
+
+      <switch name="systems/electrics/ac-right-main-bus-powered">
           <default value="0"/>
           <test value="1">
-              systems/electrics/ac-essential-bus1 gt 0
+              systems/electrics/ac-right-main-bus gt 0
           </test>
       </switch>
-      <!-- directly control instrumentation (for those items that don't provide a method to do this) -->
+
+      <switch name="systems/electrics/ac-essential-bus-powered">
+          <default value="0"/>
+          <test value="1">
+              systems/electrics/ac-essential-bus gt 0
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-left-bus-powered">
+          <default value="0"/>
+          <test value="1">
+              systems/electrics/dc-left-bus gt 0
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-right-bus-powered">
+          <default value="0"/>
+          <test value="1">
+              systems/electrics/dc-right-bus gt 0
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-essential-bus-powered">
+          <default value="0"/>
+          <test value="1">
+              systems/electrics/dc-essential-bus gt 0
+          </test>
+      </switch>
+
+      <switch name="systems/electrics/dc-main-bus-powered">
+          <default value="0"/>
+          <test value="1">
+              systems/electrics/dc-main-bus gt 0
+          </test>
+      </switch>
+
+  </channel>
+
+  <!-- ============================================================ -->
+  <!-- Channel: consumers (instrumentation serviceable outputs)     -->
+  <!-- ============================================================ -->
+  <channel name="consumers" execrate="4">
+
       <switch name="systems/electrics/comm0-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus1-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/comm[0]/serviceable</output>
       </switch>
+
       <switch name="systems/electrics/comm1-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus2-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/comm[1]/serviceable</output>
       </switch>
+
       <switch name="/instrumentation/adf[0]/serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus1-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
       </switch>
+
       <switch name="/instrumentation/adf[1]/serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus2-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
       </switch>
 
       <switch name="tied-instrumentation-comm0-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus1-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/comm[0]/serviceable</output>
       </switch>
+
       <switch name="tied-instrumentation-comm1-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus2-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/comm[1]/serviceable</output>
       </switch>
+
       <switch name="tied-instrumentation-attitude-indicator-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus1-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/attitude-indicator/serviceable</output>
       </switch>
+
       <switch name="tied-instrumentation-nav0-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus1-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/nav[0]/serviceable</output>
       </switch>
+
       <switch name="tied-instrumentation-nav1-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus2-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/nav[1]/serviceable</output>
       </switch>
+
       <switch name="tied-instrumentation-nav2-serviceable">
           <default value="0"/>
           <test value="1">
-              systems/electrics/dc-essential-bus2-powered ne 0
+              systems/electrics/dc-essential-bus-powered ne 0
           </test>
           <output>/instrumentation/nav[2]/serviceable</output>
       </switch>
+
       <fcs_function name="systems/electrics/bound/flaps-transit-light">
           <function>
               <ifthen>
                   <and>
                       <gt>
-                          <property>systems/electrics/ac-essential-bus1</property>
+                          <property>systems/electrics/ac-essential-bus</property>
                           <value>0</value>
                       </gt>
                       <or>
@@ -318,12 +480,13 @@ DC Main Bus 28 V DC
           </function>
           <output>systems/electrics/flaps-transit-light</output>
       </fcs_function>
+
       <fcs_function name="systems/electrics/bound/flaps-down-light">
           <function>
               <ifthen>
                   <and>
                       <gt>
-                          <property>systems/electrics/ac-essential-bus1</property>
+                          <property>systems/electrics/ac-essential-bus</property>
                           <value>0</value>
                       </gt>
                       <or>
@@ -343,5 +506,7 @@ DC Main Bus 28 V DC
           </function>
           <output>systems/electrics/flaps-down-light</output>
       </fcs_function>
+
   </channel>
+
 </system>

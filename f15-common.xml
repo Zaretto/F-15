@@ -216,10 +216,36 @@
                 </ecs>
                 <electrics>
                     <ground-power>0</ground-power>
-                    <!-- switches / controls -->
+                    <!-- Generator switches: 0=off, 1=on -->
                     <lgenerator-status>1</lgenerator-status>
                     <rgenerator-status>1</rgenerator-status>
-                    <ac-right-main-bus type="int">24</ac-right-main-bus>
+                    <!-- Emergency gen mode: 0=OFF, 1=AUTO, 2=MAN, 3=ISOLATE -->
+                    <emerg-gen-mode type="int">1</emerg-gen-mode>
+                    <!-- AC Buses: 115 = powered, 0 = unpowered -->
+                    <ac-left-main-bus type="double">115</ac-left-main-bus>
+                    <ac-right-main-bus type="double">115</ac-right-main-bus>
+                    <ac-essential-bus type="double">115</ac-essential-bus>
+                    <!-- DC Buses: 28 = powered, 0 = unpowered -->
+                    <dc-left-bus type="double">28</dc-left-bus>
+                    <dc-right-bus type="double">28</dc-right-bus>
+                    <dc-essential-bus type="double">28</dc-essential-bus>
+                    <dc-main-bus type="double">28</dc-main-bus>
+                    <emerg-ess-dc-bus type="double">0</emerg-ess-dc-bus>
+                    <!-- Generators -->
+                    <lgenerator-kva type="double">75</lgenerator-kva>
+                    <rgenerator-kva type="double">75</rgenerator-kva>
+                    <egenerator-kva type="double">0</egenerator-kva>
+                    <emerg-generator-status type="int">0</emerg-generator-status>
+                    <!-- Transformer-Rectifiers -->
+                    <left-tr-online type="int">1</left-tr-online>
+                    <right-tr-online type="int">1</right-tr-online>
+                    <left-tr-failed type="int">0</left-tr-failed>
+                    <right-tr-failed type="int">0</right-tr-failed>
+                    <transrect-online type="int">2</transrect-online>
+                    <!-- Bus-tie contactor -->
+                    <bus-tie-closed type="int">0</bus-tie-closed>
+                    <!-- JFS PMG -->
+                    <jfs-pmg-power type="int">0</jfs-pmg-power>
                 </electrics>
 
                 <flyt>
@@ -663,11 +689,7 @@
 -->
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/ac-essential-bus1</property>
-                </signal>
-                <signal>
-                    <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/ac-essential-bus2</property>
+                    <property type="string">fdm/jsbsim/systems/electrics/ac-essential-bus</property>
                 </signal>
                 <signal>
                     <type>float</type>
@@ -679,15 +701,23 @@
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus1</property>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus</property>
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus2</property>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-left-bus</property>
+                </signal>
+                <signal>
+                    <type>float</type>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-right-bus</property>
                 </signal>
                 <signal>
                     <type>float</type>
                     <property type="string">fdm/jsbsim/systems/electrics/dc-main-bus</property>
+                </signal>
+                <signal>
+                    <type>float</type>
+                    <property type="string">fdm/jsbsim/systems/electrics/emerg-ess-dc-bus</property>
                 </signal>
                 <signal>
                     <type>float</type>
@@ -723,11 +753,15 @@
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus1-powered</property>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus-powered</property>
                 </signal>
                 <signal>
                     <type>float</type>
-                    <property type="string">fdm/jsbsim/systems/electrics/dc-essential-bus2-powered</property>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-left-bus-powered</property>
+                </signal>
+                <signal>
+                    <type>float</type>
+                    <property type="string">fdm/jsbsim/systems/electrics/dc-right-bus-powered</property>
                 </signal>
                 <signal>
                     <type>float</type>
@@ -737,10 +771,10 @@
                     <type>float</type>
                     <property type="string">fdm/jsbsim/systems/electrics/ac-left-main-bus-powered</property>
                 </signal>
-              <signal>
-                <type>float</type>
-                <property type="string">fdm/jsbsim/systems/electrics/ac-essential-bus1-powered</property>
-              </signal>
+                <signal>
+                    <type>float</type>
+                    <property type="string">fdm/jsbsim/systems/electrics/ac-essential-bus-powered</property>
+                </signal>
               <signal>
                 <type>float</type>
                 <property type="string">fdm/jsbsim/gear/gear-position-norm</property>
@@ -1375,7 +1409,7 @@
                 <float n="11" alias="/fdm/jsbsim/propulsion/engine[1]/alt/nozzle-pos-norm" />
                 <float n="12" alias="/surface-positions/l-ramp1-position-deg" />
                 <float n="13" alias="/surface-positions/r-ramp1-position-deg" />
-                <float n="14" alias="/fdm/jsbsim/systems/electrics/ac-essential-bus1" />
+                <float n="14" alias="/fdm/jsbsim/systems/electrics/ac-essential-bus" />
                 <float n="15" alias="/fdm/jsbsim/systems/electrics/ac-left-main-bus" />
                 <float n="16" alias="/engines/engine[0]/afterburner"/>
                 <float n="17" alias="/engines/engine[1]/afterburner"/>

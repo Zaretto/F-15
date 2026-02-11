@@ -94,16 +94,16 @@ var BackseatModule =
 #    print("Ac_essential ",ac_essential," EGT ",engines_engine0_egt_degC," FF ",engines_engine0_fuel_flow_pph);
 
     if (ac_essential != nil) {
-        Pilot.getNode("fdm/jsbsim/systems/electrics/ac-essential-bus1",1).setValue(ac_essential);
-        Pilot.getNode("fdm/jsbsim/systems/electrics/ac-essential-bus2",1).setValue(ac_essential); 
-        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-essential-bus1",1).setValue(ac_essential);
-        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-essential-bus2",1).setValue(ac_essential);
+        Pilot.getNode("fdm/jsbsim/systems/electrics/ac-essential-bus",1).setValue(ac_essential);
+        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-essential-bus",1).setValue(ac_essential);
     }
     var ac_main = Pilot.getNode("sim/multiplay/generic/float[15]",1).getValue();
     if (ac_main != nil) {
         Pilot.getNode("fdm/jsbsim/systems/electrics/ac-left-main-bus",1).setValue(ac_main);
         Pilot.getNode("fdm/jsbsim/systems/electrics/ac-right-main-bus",1).setValue(ac_main);
-        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-main-bus",1).setValue(ac_main);
+        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-left-bus",1).setValue(ac_main > 0 ? 28 : 0);
+        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-right-bus",1).setValue(ac_main > 0 ? 28 : 0);
+        Pilot.getNode("fdm/jsbsim/systems/electrics/dc-main-bus",1).setValue(ac_main > 0 ? 28 : 0);
         setprop("/instrumentation/radar/serviceable",1);
     }
     if (engines_engine0_egt_degC != nil)
@@ -156,12 +156,12 @@ var init = func {
     #
     #
     # Set the electrics for yasim (basic electrical model)
-    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus1",75);
-    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus2",75); 
-    setprop("fdm/jsbsim/systems/electrics/ac-left-main-bus",75);
-    setprop("fdm/jsbsim/systems/electrics/ac-right-main-bus",75);
-    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus1",28);
-    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus2",28);
+    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/ac-left-main-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/ac-right-main-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus",28);
+    setprop("fdm/jsbsim/systems/electrics/dc-left-bus",28);
+    setprop("fdm/jsbsim/systems/electrics/dc-right-bus",28);
     setprop("fdm/jsbsim/systems/electrics/dc-main-bus",28);
     setprop("fdm/jsbsim/systems/electrics/egenerator-kva",0);
     setprop("fdm/jsbsim/systems/electrics/emerg-generator-status",0);

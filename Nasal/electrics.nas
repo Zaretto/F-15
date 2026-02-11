@@ -24,7 +24,7 @@ var ca_ramp_light = props.globals.getNode("sim/model/f15/lights/ca-l-inlet", 1);
 var masterCaution_light = props.globals.getNode("sim/model/f15/instrumentation/warnings/master-caution", 1);
 var masterCaution_light_set = props.globals.getNode("sim/model/f15/controls/master-caution-set", 1);
 var lightTest = props.globals.getNode("sim/model/f15/lights/master-test-lights",1);
-var electricsPowered = props.globals.getNode("fdm/jsbsim/systems/electrics/ac-essential-bus1",1);
+var electricsPowered = props.globals.getNode("fdm/jsbsim/systems/electrics/ac-essential-bus",1);
 masterCaution_light_set.setDoubleValue(0);
 
 var jettisonLeft = props.globals.getNode("controls/armament/station[2]/jettison-all", 1);
@@ -58,12 +58,12 @@ var dlg_ground_services  = gui.Dialog.new("dialog[2]","Aircraft/F-15/Dialogs/gro
 var dlg_lighting  = gui.Dialog.new("dialog[3]","Aircraft/F-15/Dialogs/lighting.xml");
 
     ## initialise the electrics / hyds
-    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus1",75);
-    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus2",75); 
-    setprop("fdm/jsbsim/systems/electrics/ac-left-main-bus",75);
-    setprop("fdm/jsbsim/systems/electrics/ac-right-main-bus",75);
-    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus1",28);
-    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus2",28);
+    setprop("fdm/jsbsim/systems/electrics/ac-essential-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/ac-left-main-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/ac-right-main-bus",115);
+    setprop("fdm/jsbsim/systems/electrics/dc-essential-bus",28);
+    setprop("fdm/jsbsim/systems/electrics/dc-left-bus",28);
+    setprop("fdm/jsbsim/systems/electrics/dc-right-bus",28);
     setprop("fdm/jsbsim/systems/electrics/dc-main-bus",28);
     setprop("fdm/jsbsim/systems/electrics/egenerator-kva",0);
     setprop("fdm/jsbsim/systems/electrics/emerg-generator-status",0);
@@ -79,8 +79,14 @@ var dlg_lighting  = gui.Dialog.new("dialog[3]","Aircraft/F-15/Dialogs/lighting.x
 var masterCaution =  0;
 var master_caution_active  = 0;
 
-check_caution = func(mprop, caution_light){
-    if  (getprop(mprop))
+check_caution = func(mprop, caution_light, test_fn=nil){
+    var active = 0;
+    if (test_fn != nil)
+        active = test_fn(mprop);
+    else
+        active = getprop(mprop);
+
+    if (active)
     {
         if (!getprop(caution_light))
         {
@@ -106,7 +112,7 @@ var runEMMISC = func {
     set_console_lighting();
 #
 # all spring loaded switches
-    if (!getprop("fdm/jsbsim/systems/electrics/dc-essential-bus1-powered"))
+    if (!getprop("fdm/jsbsim/systems/electrics/dc-essential-bus-powered"))
     {
         setprop("sim/model/f15/controls/windshield-heat",0);
         setup_als_lights(0);
@@ -313,7 +319,8 @@ var runEMMISC = func {
 		}
 	}
 
-	if (total_lbs < 1000)
+	if (getprop("consumables/fuel/tank[0]/level-lbs") < 600
+	    or getprop("consumables/fuel/tank[1]/level-lbs") < 1000)
     {
 		if (!ca_fuel_low.getBoolValue())
 		{
@@ -330,48 +337,12 @@ var runEMMISC = func {
 		}
 	}
 
-	if (getprop("gear/tailhook/position-norm") > 0.2)
-    {
-        if (!getprop("sim/model/f15/lights/ca-hook"))
-        {
-            setprop("sim/model/f15/lights/ca-hook",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-hook"))
-        {
-            setprop("sim/model/f15/lights/ca-hook",0);
-        }
-    }
-
-
-    if  (getprop("fdm/jsbsim/systems/ecs/oxygen-quantity-liters") < 2)
-    {
-        if (!getprop("sim/model/f15/lights/ca-oxygen"))
-        {
-            setprop("sim/model/f15/lights/ca-oxygen",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-oxygen"))
-        {
-            setprop("sim/model/f15/lights/ca-oxygen",0);
-        }
-    }
+    check_caution("gear/tailhook/position-norm", "sim/model/f15/lights/ca-hook", func(p) getprop(p) > 0.2);
+    check_caution("fdm/jsbsim/systems/ecs/oxygen-quantity-liters", "sim/model/f15/lights/ca-oxygen", func(p) getprop(p) < 2);
+    # JFS LOW does not trigger master caution per TO 1F-15A-1 p.1-56
     if  (getprop("fdm/jsbsim/systems/hydraulics/jfs-accumulator-psi") < 500)
     {
-        if (!getprop("sim/model/f15/lights/ca-jfs-low"))
-        {
-            setprop("sim/model/f15/lights/ca-jfs-low",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
+        setprop("sim/model/f15/lights/ca-jfs-low",1);
     }
     else
     {
@@ -381,82 +352,35 @@ var runEMMISC = func {
         }
     }
 
-	if (getprop("sim/model/f15/controls/AFCS/autopilot-disengage"))
+    check_caution("sim/model/f15/controls/AFCS/autopilot-disengage", "sim/model/f15/lights/ca-auto-plt");
+    check_caution("gear/launchbar/position-norm", "sim/model/f15/lights/ca-launch-bar",
+        func(p) getprop(p) and (getprop("controls/engines/engine[0]/throttle") < 0.95 or getprop("controls/engines/engine[1]/throttle") < 0.95));
+    check_caution("sim/model/f15/controls/CAS/cas-yaw-enable", "sim/model/f15/lights/ca-cas-yaw", func(p) !getprop(p));
+
+    # windshield hot: flashing if anti-ice air overtemp, steady if anti-ice is on
+    var wndshld_overtemp = getprop("fdm/jsbsim/systems/ecs/windscreen-temperature-k") > 338;
+    var wndshld_heat_on = getprop("fdm/jsbsim/systems/ecs/windscreen-heat-active");
+
+    if (wndshld_overtemp)
     {
-        if (!getprop("sim/model/f15/lights/ca-auto-plt"))
+        # Flashing - anti-ice air hot
+        if (!getprop("sim/model/f15/lights/ca-wndshld-hot-flash"))
         {
-            setprop("sim/model/f15/lights/ca-auto-plt",1);
+            setprop("sim/model/f15/lights/ca-wndshld-hot-flash",1);
             masterCaution = 1;
         }
+        setprop("sim/model/f15/lights/ca-wndshld-hot",0);
         master_caution_active = 1;
     }
-    else
+    else if (wndshld_heat_on)
     {
-        if (getprop("sim/model/f15/lights/ca-auto-plt"))
-        {
-            setprop("sim/model/f15/lights/ca-auto-plt",0);
-        }
-    }
-
-
-	if (getprop("fdm/jsbsim/systems/electrics/transrect-online") < 2)
-    {
-        if (!getprop("sim/model/f15/lights/ca-trans-rect"))
-        {
-            setprop("sim/model/f15/lights/ca-trans-rect",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-trans-rect"))
-        {
-            setprop("sim/model/f15/lights/ca-trans-rect",0);
-        }
-    }
-
-	if (getprop("gear/launchbar/position-norm") and (getprop("controls/engines/engine[0]/throttle") < 0.95 or getprop("controls/engines/engine[1]/throttle") < 0.95 ))
-    {
-        if (!getprop("sim/model/f15/lights/ca-launch-bar"))
-        {
-            setprop("sim/model/f15/lights/ca-launch-bar",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-launch-bar"))
-        {
-            setprop("sim/model/f15/lights/ca-launch-bar",0);
-        }
-    }
-    if  (!getprop("sim/model/f15/controls/CAS/cas-yaw-enable"))
-    {
-        if (!getprop("sim/model/f15/lights/ca-cas-yaw"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-yaw",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-cas-yaw"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-yaw",0);
-        }
-    }
-
-    # windshield hot if over 150deg F for any reason.
-    if (getprop("fdm/jsbsim/systems/ecs/windscreen-temperature-k") > 338)
-    {
+        # Steady - windshield anti-ice is on (informational)
         if (!getprop("sim/model/f15/lights/ca-wndshld-hot"))
         {
             setprop("sim/model/f15/lights/ca-wndshld-hot",1);
             masterCaution = 1;
         }
+        setprop("sim/model/f15/lights/ca-wndshld-hot-flash",0);
         master_caution_active = 1;
     }
     else
@@ -465,80 +389,47 @@ var runEMMISC = func {
         {
             setprop("sim/model/f15/lights/ca-wndshld-hot",0);
         }
-    }
-
-    if  (getprop("fdm/jsbsim/fcs/roll-ratio-emergency"))
-    {
-        if (!getprop("sim/model/f15/lights/ca-roll-ratio"))
+        if (getprop("sim/model/f15/lights/ca-wndshld-hot-flash"))
         {
-            setprop("sim/model/f15/lights/ca-roll-ratio",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-roll-ratio"))
-        {
-            setprop("sim/model/f15/lights/ca-roll-ratio",0);
-        }
-    }
-    if  (getprop("fdm/jsbsim/fcs/pitch-ratio-emergency"))
-    {
-        if (!getprop("sim/model/f15/lights/ca-pitch-ratio"))
-        {
-            setprop("sim/model/f15/lights/ca-pitch-ratio",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-pitch-ratio"))
-        {
-            setprop("sim/model/f15/lights/ca-pitch-ratio",0);
+            setprop("sim/model/f15/lights/ca-wndshld-hot-flash",0);
         }
     }
 
-    if  (!getprop("sim/model/f15/controls/CAS/cas-roll-enable"))
-    {
-        if (!getprop("sim/model/f15/lights/ca-cas-roll"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-roll",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-cas-roll"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-roll",0);
-        }
-    }
-
-    if  (!getprop("sim/model/f15/controls/CAS/cas-pitch-enable"))
-    {
-        if (!getprop("sim/model/f15/lights/ca-cas-pitch"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-pitch",1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-cas-pitch"))
-        {
-            setprop("sim/model/f15/lights/ca-cas-pitch",0);
-        }
-    }
+    check_caution("fdm/jsbsim/fcs/roll-ratio-emergency", "sim/model/f15/lights/ca-roll-ratio");
+    check_caution("fdm/jsbsim/fcs/pitch-ratio-emergency", "sim/model/f15/lights/ca-pitch-ratio");
+    check_caution("sim/model/f15/controls/CAS/cas-roll-enable", "sim/model/f15/lights/ca-cas-roll", func(p) !getprop(p));
+    check_caution("sim/model/f15/controls/CAS/cas-pitch-enable", "sim/model/f15/lights/ca-cas-pitch", func(p) !getprop(p));
 check_caution("fdm/jsbsim/propulsion/engine[0]/bleedair-temp-high", "sim/model/f15/lights/ca-l-bleed-air");
 check_caution("fdm/jsbsim/propulsion/engine[1]/bleedair-temp-high", "sim/model/f15/lights/ca-r-bleed-air");
 check_caution("fdm/jsbsim/propulsion/openv-total-temp-too-high", "sim/model/f15/lights/ca-tot-temp-hi");
 
 check_caution("fdm/jsbsim/propulsion/engine[0]/eec-fail", "sim/model/f15/lights/ca-l-eng-contr");
 check_caution("fdm/jsbsim/propulsion/engine[1]/eec-fail", "sim/model/f15/lights/ca-r-eng-contr");
+
+# EMER BST ON - emergency generator activated
+check_caution("fdm/jsbsim/systems/electrics/emerg-gen-active", "sim/model/f15/lights/ca-emer-bst-on");
+
+# Undriven caution lights - 3D objects and XML animations exist but no trigger logic yet.
+# Per TO 1F-15A-1 (Figures 3-8 / 3-9) the conditions are:
+#   ca-attitude     : INS/attitude reference failure or comparison monitor trip
+#   ca-av-bit       : avionics built-in-test failure detected  [no master caution]
+#   ca-bst-sys-mal  : boost system malfunction (dual BLC or pitch/roll boost failure)
+#   ca-ecs          : ECS turbine overtemp or flow control valve fault
+#   ca-fuel-hot     : fuel temperature exceeds limit (fuel-oil heat exchanger overtemp)
+#   ca-iff-mode-4   : IFF Mode 4 crypto failure or no-go reply  [no master caution]
+#   ca-inlet-ice    : engine inlet ice detected (ice detector signal)
+#   ca-xfer-pump    : fuel transfer pump failure or low output pressure
+#   ca-rud-l-mtr    : rudder limiter motor fault (limiter actuator disagree)
+#
+# Per TO 1F-15A-1 p.1-56 the following lights do NOT trigger master caution:
+#   AV BIT, JFS LOW, SPD BK OUT, IFF MODE 4 (SPARE)
+#
+# The physical caution panel has cooling circuitry that duty-cycles lamps if
+# they overheat from prolonged illumination (TO 1F-15A-1 p.1-56: "Cooling
+# circuitry will cause the lights to blink if they are illuminated for long
+# periods of time and become overheated"). Almost certainly per-bulb rather than
+# panel-wide; a panel-level cutout would blink all active lights simultaneously,
+# masking new caution indications during an already degraded state.
 
 #anti skid will indicate when the parking brake is on.
     setprop("sim/model/f15/lights/ca-anti-skid", getprop("controls/gear/brake-parking"));
@@ -657,16 +548,10 @@ setlistener("sim/model/f15/controls/electrics/r-gen-switch", func
 
 setlistener("sim/model/f15/controls/electrics/emerg-gen-switch", func {
     var v = getprop("sim/model/f15/controls/electrics/emerg-gen-switch");
-    if(v != nil)
-    {
-        if (v)
-        {
-            setprop("fdm/jsbsim/systems/electrics/emerg-generator-status", 1);
-        }
-        else
-        {
-            setprop("fdm/jsbsim/systems/electrics/emerg-generator-status", 0);
-        }
+    if (v != nil) {
+        # 0=OFF, 1=AUTO (normal), 2=MAN, 3=ISOLATE
+        setprop("fdm/jsbsim/systems/electrics/emerg-gen-mode", v);
+        setprop("fdm/jsbsim/systems/electrics/emerg-generator-status", v > 0 ? 1 : 0);
     }
 }, 1, 0);
 
@@ -759,18 +644,18 @@ var setup_als_lights = func(dc_power)
 # only need this if we can get the bus-essential-powered as a listener too, otherwise the setup_als_lights is
 # called in the main EMMISC loop
 #setlistener("sim/current-view/internal", func {
-#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus1-powered"));
+#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus-powered"));
 #}, 1, 0);
 #
 #setlistener("sim/multiplay/generic/int[6]", func
 #{
-#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus1-powered"));
+#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus-powered"));
 #
 #}, 1, 0);
 #
 #setlistener("gear/gear[0]/position-norm", func
 #{
-#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus1-powered"));
+#    aircraft.setup_als_lights(getprop("fdm/jsbsim/systems/electrics/dc-essential-bus-powered"));
 #}, 1, 0);
 
 setlistener("sim/model/f15/controls/windshield-heat", func 
