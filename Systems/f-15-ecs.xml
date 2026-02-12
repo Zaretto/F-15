@@ -402,6 +402,106 @@
       <rate_limit>systems/ecs/windscreen-frost-amount-dmd-rate</rate_limit>
       <output>systems/ecs/windscreen-frost-amount</output>
     </actuator>
+
+  <!--
+       Cockpit air temperature — lumped-capacitance model.
+
+       The F-15 ECS feeds engine bleed air through a bootstrap air-cycle
+       machine (ACM) cooling pack, then into the cockpit through distribution
+       ducting.  Cockpit air temperature is the balance between:
+
+         1. Skin conduction — heat gain/loss through canopy, fuselage panels,
+            and transparencies. Proportional to (OAT - T_cockpit). The F-15
+            has a large single-piece windscreen and a bubble canopy giving
+            significant solar/convective coupling with outside air, but the
+            overall cockpit volume (~2.5 m3) is reasonably well insulated
+            at the structural panels.
+
+         2. ECS conditioning — bleed air driven toward a regulated set-point
+            (~20 deg C / 293 K). Active whenever pressurisation is active (at
+            least one engine running, canopy closed, bleed-air-source != OFF).
+            This is the dominant driver during normal flight.
+
+         3. Canopy open — when the canopy is cracked (position > 0.1) the
+            cockpit rapidly equalises with ambient air through direct
+            convective exchange. The skin coefficient jumps by ~50x.
+
+       Differential equation (Euler integration at execrate 4):
+
+         dT/dt = k_skin * (OAT - T_cockpit)
+               + k_ecs  * (T_target - T_cockpit)
+
+       Coefficients:
+         k_skin = 0.002 /s  canopy closed (tau ~ 500 s to OAT alone)
+                = 0.1   /s  canopy open   (tau ~ 10 s)
+         k_ecs  = 0.015 /s  when active   (tau ~ 67 s to setpoint)
+                = 0     /s  when off
+
+       Steady-state examples (canopy closed, ECS on):
+         FL300 OAT 228 K -> T_eq ~ 285 K (12 deg C)
+         Sea level 303 K -> T_eq ~ 294 K (21 deg C)
+         Hot ramp  323 K -> T_eq ~ 296 K (23 deg C)
+
+       Output property: systems/ecs/cockpit-temperature-k
+       Consumed by: caution panel heatsink thermal model (Nasal/electrics.nas)
+  -->
+
+  <!-- Cockpit air temperature model
+       Inputs:  systems/ecs/windscreen-oat-k (already computed above)
+                systems/ecs/pressurisation-active
+                /canopy/position-norm
+       Output:  systems/ecs/cockpit-temperature-k  -->
+
+  <!-- ECS conditioning coefficient: active only when pressurisation running -->
+  <switch name="systems/ecs/cockpit-ecs-coeff">
+    <default value="0"/>
+    <test value="0.015">
+      systems/ecs/pressurisation-active eq 1
+    </test>
+  </switch>
+
+  <!-- Skin conduction coefficient: large when canopy open, small when closed -->
+  <switch name="systems/ecs/cockpit-skin-coeff">
+    <default value="0.002"/>
+    <test value="0.1">
+      /canopy/position-norm gt 0.1
+    </test>
+  </switch>
+
+  <fcs_function name="systems/ecs/cockpit-temperature-k">
+    <description>Cockpit air temperature (lumped capacitance model)</description>
+    <function>
+      <sum>
+        <property>systems/ecs/cockpit-temperature-k</property>
+        <product>
+          <property>simulation/channel-dt</property>
+          <sum>
+            <!-- Skin conduction: k_skin * (OAT - T_cockpit) -->
+            <product>
+              <property>systems/ecs/cockpit-skin-coeff</property>
+              <difference>
+                <property>systems/ecs/windscreen-oat-k</property>
+                <property>systems/ecs/cockpit-temperature-k</property>
+              </difference>
+            </product>
+            <!-- ECS conditioning: k_ecs * (293 - T_cockpit) -->
+            <product>
+              <property>systems/ecs/cockpit-ecs-coeff</property>
+              <difference>
+                <value>293</value>
+                <property>systems/ecs/cockpit-temperature-k</property>
+              </difference>
+            </product>
+          </sum>
+        </product>
+      </sum>
+    </function>
+    <clipto>
+      <min>200</min>
+      <max>340</max>
+    </clipto>
+  </fcs_function>
+
   </channel>
 
 </system>

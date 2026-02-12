@@ -5449,14 +5449,32 @@
     <type>select</type>
     <object-name>ca-anti-skid</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-anti-skid</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-anti-skid</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5474,14 +5492,32 @@
     <type>select</type>
     <object-name>ca-attitude</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-attitude</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-attitude</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5499,14 +5535,32 @@
     <type>select</type>
     <object-name>ca-auto-plt</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-auto-plt</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-auto-plt</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5524,14 +5578,32 @@
     <type>select</type>
     <object-name>ca-av-bit</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-av-bit</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-av-bit</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5549,14 +5621,32 @@
     <type>select</type>
     <object-name>ca-bingo-fuel</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-bingo-fuel</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-bingo-fuel</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5574,14 +5664,32 @@
     <type>select</type>
     <object-name>ca-bst-sys-mal</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-bst-sys-mal</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-bst-sys-mal</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5599,14 +5707,32 @@
     <type>select</type>
     <object-name>ca-cas-pitch</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-cas-pitch</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-cas-pitch</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5624,14 +5750,32 @@
     <type>select</type>
     <object-name>ca-cas-roll</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-cas-roll</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-cas-roll</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5649,14 +5793,32 @@
     <type>select</type>
     <object-name>ca-cas-yaw</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-cas-yaw</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-cas-yaw</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5674,14 +5836,32 @@
     <type>select</type>
     <object-name>ca-ecs</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-ecs</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-ecs</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5699,14 +5879,32 @@
     <type>select</type>
     <object-name>ca-emer-bst-on</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-emer-bst-on</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-emer-bst-on</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5724,14 +5922,32 @@
     <type>select</type>
     <object-name>ca-fuel-hot</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-fuel-hot</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-fuel-hot</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5749,14 +5965,32 @@
     <type>select</type>
     <object-name>ca-fuel-low</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-fuel-low</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-fuel-low</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5774,14 +6008,32 @@
     <type>select</type>
     <object-name>ca-hook</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-hook</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-hook</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5799,14 +6051,32 @@
     <type>select</type>
     <object-name>ca-hydraulic</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-hydraulic</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-hydraulic</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5824,14 +6094,32 @@
     <type>select</type>
     <object-name>ca-iff-mode-4</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-iff-mode-4</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-iff-mode-4</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5849,14 +6137,32 @@
     <type>select</type>
     <object-name>ca-inlet-ice</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-inlet-ice</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-inlet-ice</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5874,14 +6180,32 @@
     <type>select</type>
     <object-name>ca-jfs-low</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-jfs-low</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-jfs-low</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5899,14 +6223,32 @@
     <type>select</type>
     <object-name>ca-l-bleed-air</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-l-bleed-air</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-l-bleed-air</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5924,14 +6266,32 @@
     <type>select</type>
     <object-name>ca-l-bst-pmp</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-l-bst-pmp</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-l-bst-pmp</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5949,14 +6309,32 @@
     <type>select</type>
     <object-name>ca-l-eng-contr</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-l-eng-contr</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-l-eng-contr</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5974,14 +6352,32 @@
     <type>select</type>
     <object-name>ca-l-gen-out</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-l-gen-out</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-l-gen-out</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -5999,14 +6395,32 @@
     <type>select</type>
     <object-name>ca-l-inlet</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-l-inlet</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-l-inlet</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6024,14 +6438,32 @@
     <type>select</type>
     <object-name>ca-oil-press</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-oil-press</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-oil-press</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6049,14 +6481,32 @@
     <type>select</type>
     <object-name>ca-oxygen</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-oxygen</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-oxygen</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6074,14 +6524,32 @@
     <type>select</type>
     <object-name>ca-pitch-ratio</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-pitch-ratio</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-pitch-ratio</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6099,14 +6567,32 @@
     <type>select</type>
     <object-name>ca-r-bleed-air</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-r-bleed-air</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-r-bleed-air</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6124,14 +6610,32 @@
     <type>select</type>
     <object-name>ca-r-bst-pmp</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-r-bst-pmp</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-r-bst-pmp</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6149,14 +6653,32 @@
     <type>select</type>
     <object-name>ca-r-eng-contr</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-r-eng-contr</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-r-eng-contr</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6174,14 +6696,32 @@
     <type>select</type>
     <object-name>ca-r-gen-out</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-r-gen-out</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-r-gen-out</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6199,14 +6739,32 @@
     <type>select</type>
     <object-name>ca-r-inlet</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-r-inlet</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-r-inlet</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6224,14 +6782,32 @@
     <type>select</type>
     <object-name>ca-roll-ratio</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-roll-ratio</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-roll-ratio</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6249,14 +6825,32 @@
     <type>select</type>
     <object-name>ca-rud-l-mtr</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-rud-l-mtr</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-rud-l-mtr</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6274,6 +6868,10 @@
     <type>select</type>
     <object-name>ca-spd-bk-out</object-name>
     <condition>
+      <greater-than>
+        <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
+        <value>0</value>
+      </greater-than>
       <or>
         <property>sim/model/f15/lights/master-test-lights</property>
         <greater-than>
@@ -6281,10 +6879,24 @@
           <value>0</value>
         </greater-than>
       </or>
-      <greater-than>
-        <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
-        <value>0</value>
-      </greater-than>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6302,14 +6914,32 @@
     <type>select</type>
     <object-name>ca-tot-temp-hi</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-tot-temp-hi</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-tot-temp-hi</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6327,6 +6957,12 @@
     <type>select</type>
     <object-name>ca-wndshld-hot</object-name>
     <condition>
+      <!-- Bus powered -->
+      <greater-than>
+        <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
+        <value>0</value>
+      </greater-than>
+      <!-- Light requested (includes wndshld-hot overtemp flash) -->
       <or>
         <property>sim/model/f15/lights/master-test-lights</property>
         <property>sim/model/f15/lights/ca-wndshld-hot</property>
@@ -6353,10 +6989,25 @@
           <value>0</value>
         </greater-than>
       </or>
-      <greater-than>
-        <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
-        <value>0</value>
-      </greater-than>
+      <!-- Panel thermal: steady if cool, flash if overheated -->
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>
@@ -6374,14 +7025,32 @@
     <type>select</type>
     <object-name>ca-xfer-pump</object-name>
     <condition>
-      <or>
-        <property>sim/model/f15/lights/master-test-lights</property>
-        <property>sim/model/f15/lights/ca-xfer-pump</property>
-      </or>
       <greater-than>
         <property>fdm/jsbsim/systems/electrics/ac-essential-bus</property>
         <value>0</value>
       </greater-than>
+      <or>
+        <property>sim/model/f15/lights/master-test-lights</property>
+        <property>sim/model/f15/lights/ca-xfer-pump</property>
+      </or>
+      <or>
+        <less-than-equals>
+          <property>sim/model/f15/lights/caution-panel-temperature_k</property>
+          <property>sim/model/f15/lights/caution-panel-overheat-k</property>
+        </less-than-equals>
+        <less-than>
+          <expression>
+            <mod>
+              <property>/sim/time/elapsed-sec</property>
+              <sum>
+                <property>sim/model/f15/lights/flash-on-time-sec</property>
+                <property>sim/model/f15/lights/flash-off-time-sec</property>
+              </sum>
+            </mod>
+          </expression>
+          <property>sim/model/f15/lights/flash-on-time-sec</property>
+        </less-than>
+      </or>
     </condition>
   </animation>
   <animation>

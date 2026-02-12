@@ -196,6 +196,7 @@
                     -->
                     <bleed-air-source>0</bleed-air-source>
                     <cabin-altitude-ft />
+                    <cockpit-temperature-k>293</cockpit-temperature-k>
                     <canopy-position-dmd>0</canopy-position-dmd>
                     <emerg-vent>0</emerg-vent>
                     <liquid-oxygen-activated>0</liquid-oxygen-activated>
@@ -861,6 +862,17 @@
             </map>
             <f15>
                 <cft type="float">0</cft>
+		        <lights>
+		  <!-- Caution light flash timing and panel thermal model -->
+		          <flash-on-time-sec type="double">0.3</flash-on-time-sec>
+		          <flash-off-time-sec type="double">0.3</flash-off-time-sec>
+		          <caution-panel-temperature_k type="double">293.15</caution-panel-temperature_k>
+		          <caution-panel-overheat-k type="double">358.15</caution-panel-overheat-k> <!-- 85 deg C -->
+		          <caution-panel-heating-rate-per-bulb type="double">0.02</caution-panel-heating-rate-per-bulb>
+		          <caution-panel-cooling-coeff type="double">0.008</caution-panel-cooling-coeff> <!-- tau approx 125s -->
+		          <caution-panel-active-bulb-count type="int">0</caution-panel-active-bulb-count>
+		        </lights>
+
                 <controls>
                     <windshield-heat type="int">0</windshield-heat>
                     <CAS>

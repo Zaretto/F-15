@@ -79,7 +79,12 @@ var dlg_lighting  = gui.Dialog.new("dialog[3]","Aircraft/F-15/Dialogs/lighting.x
 var masterCaution =  0;
 var master_caution_active  = 0;
 
-check_caution = func(mprop, caution_light, test_fn=nil){
+var caution_active = {};      # tracks logically active cautions (prevents master caution re-trigger)
+var last_emmisc_time = 0;     # for dt calculation
+var emmisc_dt = 0;            # frame delta-time (set in runEMMISC)
+var panel_bulb_count = 0;     # number of active bulbs this frame
+
+check_caution = func(mprop, caution_light, test_fn=nil, trigger_master=1){
     var active = 0;
     if (test_fn != nil)
         active = test_fn(mprop);
@@ -88,19 +93,17 @@ check_caution = func(mprop, caution_light, test_fn=nil){
 
     if (active)
     {
-        if (!getprop(caution_light))
-        {
-            setprop(caution_light,1);
+        if (trigger_master and !contains(caution_active, caution_light) or caution_active[caution_light] == 0)
             masterCaution = 1;
-        }
+        caution_active[caution_light] = 1;
         master_caution_active = 1;
+        panel_bulb_count += 1;
+        setprop(caution_light, 1);
     }
     else
     {
-        if (getprop(caution_light))
-        {
-            setprop(caution_light,0);
-        }
+        caution_active[caution_light] = 0;
+        setprop(caution_light, 0);
     }
 }
 
@@ -125,232 +128,64 @@ var runEMMISC = func {
 
     masterCaution =  masterCaution_light_set.getValue();
     master_caution_active  = 0;
-    var engine_crank_switch_pos = getprop("sim/model/f15/controls/engine/engine-crank");
+    panel_bulb_count = 0;
 
-    if ( ((engine_crank_switch_pos == 1 or l_eng_starter.getBoolValue()) and l_eng_running.getBoolValue()) 
-        or ((engine_crank_switch_pos == 2 or r_eng_starter.getBoolValue()) and r_eng_running.getBoolValue()))
-    {
-        if (!ca_start_valve.getBoolValue())
-        {
-		    ca_start_valve.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }        
-    else
-    {
-        if (ca_start_valve.getBoolValue())
-	    {
-		    ca_start_valve.setBoolValue(0);
-        }
-    }
+    # dt for panel thermal model
+    var now = getprop("sim/time/elapsed-sec");
+    emmisc_dt = now - last_emmisc_time;
+    last_emmisc_time = now;
+    if (emmisc_dt > 1) emmisc_dt = 0.1; # clamp on first call or after pause
 
-#
-# RAMPS light on when either of the following 2 conditions met:
-# 
-# 1. Gear Handle Down or Inlet Ramps Switch in stow 
-#    AND 
-#    Ramp#2 not in stow locks OR Ramp#3 not in stow locks
-#
-# 2. Hydraulic shutoff value deenergized (Mach <0.35 and/or AICS failuer)
-#    AND
-#    Ramp#1 not in stow locks OR Ramp#3 not in stow locks
-#
-## ca_ramp_light on 
+    check_caution("sim/model/f15/controls/engine/engine-crank", "sim/model/f15/lights/ca-start-valve",
+        func(p) {
+            var c = getprop(p);
+            return ((c==1 or l_eng_starter.getBoolValue()) and l_eng_running.getBoolValue())
+                or ((c==2 or r_eng_starter.getBoolValue()) and r_eng_running.getBoolValue());
+        });
 
-# INLET light:
-# Indicates AICS programmer/system failure.
-# AICS Failure:
-# 1. < M 0.5 ramps should be restrained by actuator stow locks
-# 2. > M 0.5 ramp movement is restrained by trapped hydraulic pressure and mechanical locks, depending
-#   on mach when inlet light illuminates
-# 3.> M 0.9 Ramp movement is minimized by actuator spool valves and the aerodynamic load profile
-#  in this Mach range and a RAMP light should illuminate
+    check_caution("fdm/jsbsim/systems/hydraulics/pc1-psi", "sim/model/f15/lights/ca-hydraulic",
+        func(p) getprop(p) < 2100
+            or getprop("fdm/jsbsim/systems/hydraulics/pc2-psi") < 2100
+            or getprop("fdm/jsbsim/systems/hydraulics/util-psi") < 2100);
 
-    if(getprop("fdm/jsbsim/systems/hydraulics/pc1-psi") < 2100 or
-       getprop("fdm/jsbsim/systems/hydraulics/pc2-psi") < 2100 or
-       getprop("fdm/jsbsim/systems/hydraulics/util-psi") < 2100)
-    {
-		if (!ca_hyd_press_light.getBoolValue())
-		{
-		    ca_hyd_press_light.setBoolValue(1);
-            masterCaution = 1;
-		}
-        master_caution_active = 1;
-    }
-    else
-    {
-        ca_hyd_press_light.setBoolValue(0);
-    }
+    check_caution("engines/engine[0]/oil-pressure-psi", "sim/model/f15/lights/ca-oil-press",
+        func(p) oil_pressure_l.getValue() < 23 or oil_pressure_r.getValue() < 23);
 
-	if (oil_pressure_l.getValue() < 23 or oil_pressure_r.getValue() < 23 )
-    {
-		if (!ca_oil_press_light.getBoolValue())
-		{
-		    ca_oil_press_light.setBoolValue(1);
-            masterCaution = 1;
-		}
-        master_caution_active = 1;
-	}
-	else
-	{
-		if (ca_oil_press_light.getBoolValue())
-		{
-		    ca_oil_press_light.setBoolValue(0);
-		}
-    }
+    check_caution("engines/engine[0]/oil-pressure-psi", "sim/model/f15/lights/ca-l-bst-pmp",
+        func(p) getprop(p) < 23);
 
-    if(oil_pressure_l.getValue() < 23)
-    {
-        if (!ca_l_fuel_press_light.getBoolValue())
-        {
-            ca_l_fuel_press_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if(ca_l_fuel_press_light.getBoolValue())
-        {
-            ca_l_fuel_press_light.setBoolValue(0);
-        }
-    }
-    if(oil_pressure_r.getValue() < 23)
-    {
-        if (!ca_r_fuel_press_light.getBoolValue())
-        {
-            ca_r_fuel_press_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if(ca_r_fuel_press_light.getBoolValue())
-        {
-            ca_r_fuel_press_light.setBoolValue(0);
-        }
-    }
+    check_caution("engines/engine[1]/oil-pressure-psi", "sim/model/f15/lights/ca-r-bst-pmp",
+        func(p) getprop(p) < 23);
 
-    if(getprop("fdm/jsbsim/systems/electrics/lgenerator-kva") < 50)
-    {
-        if (!ca_l_gen_light.getBoolValue())
-        {
-            ca_l_gen_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (ca_l_gen_light.getBoolValue())
-        {
-            ca_l_gen_light.setBoolValue(0);
-        }
-    }
+    check_caution("fdm/jsbsim/systems/electrics/lgenerator-kva", "sim/model/f15/lights/ca-l-gen-out",
+        func(p) getprop(p) < 50);
 
-#
-# Inlet ramps.
-    if(!getprop("fdm/jsbsim/systems/hydraulics/util-pressure"))
-    {
-        if (!ca_l_inlet_light.getBoolValue())
-        {
-            ca_l_inlet_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (ca_l_inlet_light.getBoolValue())
-        {
-            ca_l_inlet_light.setBoolValue(0);
-        }
-    }
-    if(!getprop("fdm/jsbsim/systems/hydraulics/util-pressure"))
-    {
-        if (!ca_r_inlet_light.getBoolValue())
-        {
-            ca_r_inlet_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (ca_r_inlet_light.getBoolValue())
-        {
-            ca_r_inlet_light.setBoolValue(0);
-        }
-    }
+    check_caution("fdm/jsbsim/systems/electrics/rgenerator-kva", "sim/model/f15/lights/ca-r-gen-out",
+        func(p) getprop(p) < 50);
 
-    if(getprop("fdm/jsbsim/systems/electrics/rgenerator-kva") < 50)
-    {
-        if (!ca_r_gen_light.getBoolValue())
-        {
-            ca_r_gen_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        if (ca_r_gen_light.getBoolValue())
-        {
-            ca_r_gen_light.setBoolValue(0);
-        }
-    }
+    check_caution("fdm/jsbsim/systems/hydraulics/util-pressure", "sim/model/f15/lights/ca-l-inlet",
+        func(p) !getprop(p));
 
-	if (total_lbs < bingo.getValue())
-    {
-		if (!ca_bingo_light.getBoolValue())
-		{
-		    ca_bingo_light.setBoolValue(1);
-            masterCaution = 1;
-		}
-        master_caution_active = 1;
-	}
-	else
-	{
-		if (ca_bingo_light.getBoolValue())
-		{
-		    ca_bingo_light.setBoolValue(0);
-		}
-	}
+    check_caution("fdm/jsbsim/systems/hydraulics/util-pressure", "sim/model/f15/lights/ca-r-inlet",
+        func(p) !getprop(p));
 
-	if (getprop("consumables/fuel/tank[0]/level-lbs") < 600
-	    or getprop("consumables/fuel/tank[1]/level-lbs") < 1000)
-    {
-		if (!ca_fuel_low.getBoolValue())
-		{
-    	    ca_fuel_low.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-	}
-	else
-	{
-		if (ca_fuel_low.getBoolValue())
-		{
-		    ca_fuel_low.setBoolValue(0);
-		}
-	}
+    check_caution("sim/model/f15/controls/fuel/bingo", "sim/model/f15/lights/ca-bingo-fuel",
+        func(p) total_lbs < bingo.getValue());
+
+    check_caution("consumables/fuel/total-fuel-lbs", "sim/model/f15/lights/ca-fuel-low",
+        func(p) getprop(p) < 1000);
+
+    check_caution("canopy/position-norm", "sim/model/f15/lights/ca-canopy-lock",
+        func(p) canopy.getValue() > 0);
+
+    # ANTI-SKID does not trigger master caution
+    check_caution("controls/gear/brake-parking", "sim/model/f15/lights/ca-anti-skid", nil, 0);
 
     check_caution("gear/tailhook/position-norm", "sim/model/f15/lights/ca-hook", func(p) getprop(p) > 0.2);
     check_caution("fdm/jsbsim/systems/ecs/oxygen-quantity-liters", "sim/model/f15/lights/ca-oxygen", func(p) getprop(p) < 2);
     # JFS LOW does not trigger master caution per TO 1F-15A-1 p.1-56
-    if  (getprop("fdm/jsbsim/systems/hydraulics/jfs-accumulator-psi") < 500)
-    {
-        setprop("sim/model/f15/lights/ca-jfs-low",1);
-    }
-    else
-    {
-        if (getprop("sim/model/f15/lights/ca-jfs-low"))
-        {
-            setprop("sim/model/f15/lights/ca-jfs-low",0);
-        }
-    }
+    check_caution("fdm/jsbsim/systems/hydraulics/jfs-accumulator-psi", "sim/model/f15/lights/ca-jfs-low",
+        func(p) getprop(p) < 500, 0);
 
     check_caution("sim/model/f15/controls/AFCS/autopilot-disengage", "sim/model/f15/lights/ca-auto-plt");
     check_caution("gear/launchbar/position-norm", "sim/model/f15/lights/ca-launch-bar",
@@ -423,29 +258,30 @@ check_caution("fdm/jsbsim/systems/electrics/emerg-gen-active", "sim/model/f15/li
 #
 # Per TO 1F-15A-1 p.1-56 the following lights do NOT trigger master caution:
 #   AV BIT, JFS LOW, SPD BK OUT, IFF MODE 4 (SPARE)
-#
-# The physical caution panel has cooling circuitry that duty-cycles lamps if
-# they overheat from prolonged illumination (TO 1F-15A-1 p.1-56: "Cooling
-# circuitry will cause the lights to blink if they are illuminated for long
-# periods of time and become overheated"). Almost certainly per-bulb rather than
-# panel-wide; a panel-level cutout would blink all active lights simultaneously,
-# masking new caution indications during an already degraded state.
 
-#anti skid will indicate when the parking brake is on.
-    setprop("sim/model/f15/lights/ca-anti-skid", getprop("controls/gear/brake-parking"));
+    # wndshld-hot is not in caution_active hash — count it separately
+    if (getprop("sim/model/f15/lights/ca-wndshld-hot") or getprop("sim/model/f15/lights/ca-wndshld-hot-flash"))
+        panel_bulb_count += 1;
 
-    if (canopy.getValue() > 0)
-    {
-		if (!ca_canopy_light.getBoolValue()){
-            ca_canopy_light.setBoolValue(1);
-            masterCaution = 1;
-        }
-        master_caution_active = 1;
-    }
-    else
-    {
-        ca_canopy_light.setBoolValue(0);
-    }
+    # Master test illuminates all 37 bulbs
+    if (lightTest.getValue())
+        panel_bulb_count = 37;
+
+    setprop("sim/model/f15/lights/caution-panel-active-bulb-count", panel_bulb_count);
+
+    var panel_heating = getprop("sim/model/f15/lights/caution-panel-heating-rate-per-bulb") or 0.02;
+    var panel_cooling = getprop("sim/model/f15/lights/caution-panel-cooling-coeff") or 0.008;
+    var cockpit_k = getprop("fdm/jsbsim/systems/ecs/cockpit-temperature-k") or 293;
+    var panel_temp = getprop("sim/model/f15/lights/caution-panel-temperature_k") or cockpit_k;
+    var overheat_k = getprop("sim/model/f15/lights/caution-panel-overheat-k") or 358.15;
+
+    # When overheated the lights flash (0.3s on / 0.3s off) so heating duty cycle drops to 50%
+    var flash_on = getprop("sim/model/f15/lights/flash-on-time-sec") or 0.3;
+    var flash_off = getprop("sim/model/f15/lights/flash-off-time-sec") or 0.3;
+    var duty_cycle = (panel_temp > overheat_k) ? flash_on / (flash_on + flash_off) : 1.0;
+
+    panel_temp += emmisc_dt * (panel_bulb_count * panel_heating * duty_cycle - panel_cooling * (panel_temp - cockpit_k));
+    setprop("sim/model/f15/lights/caution-panel-temperature_k", panel_temp);
 
     if (jettisonLeft.getValue() or jettisonRight.getValue()){
         masterCaution = 1;
