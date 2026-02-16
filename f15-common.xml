@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <!-- F-15 All Variants
    | Richard Harrison: released 2015-06-29 : rjh@zaretto.com
    |   
@@ -34,10 +34,19 @@
                 <beta-d-gain>0</beta-d-gain>
                 <beta-pd>0</beta-pd>
                 <beta-p-gain>0</beta-p-gain>
-                <ptc-i-gain>0.14</ptc-i-gain>
+                <!-- Pitch CAS -->
+                <pitch-cas-kq>15.5</pitch-cas-kq>
+                <!-- PTC -->
+                <ptc-i-gain>1.5</ptc-i-gain>
                 <ptc-nz-accelerometer-c1>102</ptc-nz-accelerometer-c1>
                 <ptc-nz-accelerometer-limit>1</ptc-nz-accelerometer-limit>
-                <ptc-p-gain>0.4</ptc-p-gain>
+                <ptc-p-gain>0.267</ptc-p-gain>
+                <ptc-stick-to-g>2.0</ptc-stick-to-g>
+                <ptc-cas-interconnect-gain>0.15</ptc-cas-interconnect-gain>
+                <!-- Yaw CAS -->
+                <yaw-cas-acceleration-gain>22</yaw-cas-acceleration-gain>
+                <yaw-cas-feedback-gain>0.005</yaw-cas-feedback-gain>
+                <yaw-cas-crossfeed-gain>0.02</yaw-cas-crossfeed-gain>
               </cas>
           
               <fcs>
@@ -67,12 +76,11 @@
                 <pitch-ratio-emergency-value type="double">0.5</pitch-ratio-emergency-value>
                 <roll-ratio-emergency>0</roll-ratio-emergency>
 
+                <gun-weight-stab-bias-deg type="double">0.4</gun-weight-stab-bias-deg>
+                <departure-cas-shutdown type="double">0</departure-cas-shutdown>
+
                 <yaw-damper-factor type="double">1</yaw-damper-factor>
                 <yaw-damper-factor-c1 type="double">50</yaw-damper-factor-c1>
-
-                <!-- roll ratio is a linear function  -->
-                <roll-ratio-factor type="double">-0.00145</roll-ratio-factor>
-                <roll-ratio-base type="double">1.35</roll-ratio-base>
             </fcs>
 
             <gear>
