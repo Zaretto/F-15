@@ -255,6 +255,16 @@
                     <bus-tie-closed type="int">0</bus-tie-closed>
                     <!-- JFS PMG -->
                     <jfs-pmg-power type="int">0</jfs-pmg-power>
+                    <master-test-lights alias="/sim/model/f15/lights/master-test-lights"/>
+                    <!-- Instrumentation serviceable aliases -->
+                    <comm0-serviceable alias="/instrumentation/comm[0]/serviceable"/>
+                    <comm1-serviceable alias="/instrumentation/comm[1]/serviceable"/>
+                    <adf0-serviceable alias="/instrumentation/adf[0]/serviceable"/>
+                    <adf1-serviceable alias="/instrumentation/adf[1]/serviceable"/>
+                    <attitude-indicator-serviceable alias="/instrumentation/attitude-indicator/serviceable"/>
+                    <nav0-serviceable alias="/instrumentation/nav[0]/serviceable"/>
+                    <nav1-serviceable alias="/instrumentation/nav[1]/serviceable"/>
+                    <nav2-serviceable alias="/instrumentation/nav[2]/serviceable"/>
                 </electrics>
 
                 <flyt>
