@@ -443,10 +443,10 @@
                     <v>0</v>
                     <ifthen>
                         <and>
-                            <ge>
+                            <gt>
                                 <property>propulsion/openv-overspeed</property>
                                 <property>propulsion/engine[0]/config/fire-point</property>
-                            </ge>
+                            </gt>
                             <gt>
                                 <property>propulsion/engine[0]/PB</property>
                                 <value>1.6</value>
@@ -1233,10 +1233,10 @@
                     <v>0</v>
                     <ifthen>
                         <and>
-                            <ge>
+                            <gt>
                                 <property>propulsion/openv-overspeed</property>
                                 <property>propulsion/engine[1]/config/fire-point</property>
-                            </ge>
+                            </gt>
                             <gt>
                                 <property>propulsion/engine[1]/PB</property>
                                 <value>1.6</value>
