@@ -240,7 +240,7 @@
         </fcs_function>
 
         <fcs_function name="propulsion/openv-underspeed">
-            <description>Exceeded maximum speed as defined by operational envelope</description>
+            <description>Below minimum speed as defined by operational envelope</description>
             <function>
                 <sum>
                     <property>propulsion/openv-underspeed</property>
@@ -581,10 +581,47 @@
             </test>
         </switch>
 
+        <!--
+            Flameout due to insufficient airflow: when the engine has been
+            operating outside its Mach/altitude envelope long enough for
+            the underspeed accumulator to reach the stall threshold, the
+            combustor can no longer sustain combustion and the engine
+            flames out. This is a latching condition - once flamed out the
+            engine remains stalled until the aircraft returns within the
+            operating envelope (underspeed recovers to 0) and the pilot
+            can restart via the normal start procedure (damage-reset).
+            The operating envelope (openv-mn-must-be-above) defines the
+            minimum Mach for each altitude based on the F100 combustor
+            stability limits.
+        -->
+        <switch name="propulsion/engine[0]/flameout">
+            <default value="propulsion/engine[0]/flameout" />
+            <test value="0">
+                propulsion/damage-reset ne 0
+            </test>
+            <test value="0">
+                propulsion/openv-underspeed le 0
+            </test>
+            <test value="1">
+                propulsion/openv-underspeed ge 1
+            </test>
+        </switch>
+
+        <!--
+            Stalled: directly tied to FGTurbine::Stalled via JSBSim
+            property binding. When true the engine enters tpStall phase
+            (no thrust, N1/N2 wind down). Sources:
+            - openv-underspeed ge 1: operating outside Mach/alt envelope
+            - flameout latch: keeps engine stalled after envelope exceedance
+              until underspeed recovers to 0 and damage-reset
+        -->
         <switch name="propulsion/engine[0]/stalled">
             <default value="0" />
             <test value="1">
                 propulsion/openv-underspeed ge 1
+            </test>
+            <test value="1">
+                propulsion/engine[0]/flameout eq 1
             </test>
         </switch>
 
@@ -1371,10 +1408,34 @@
             </test>
         </switch>
 
+        <!--
+            Flameout due to insufficient airflow (Engine 1): latching
+            condition, see Engine 0 flameout comment for full description.
+        -->
+        <switch name="propulsion/engine[1]/flameout">
+            <default value="propulsion/engine[1]/flameout" />
+            <test value="0">
+                propulsion/damage-reset ne 0
+            </test>
+            <test value="0">
+                propulsion/openv-underspeed le 0
+            </test>
+            <test value="1">
+                propulsion/openv-underspeed ge 1
+            </test>
+        </switch>
+
+        <!--
+            Stalled (Engine 1): directly tied to FGTurbine::Stalled.
+            See Engine 0 stalled comment for full description.
+        -->
         <switch name="propulsion/engine[1]/stalled">
             <default value="0" />
             <test value="1">
                 propulsion/openv-underspeed ge 1
+            </test>
+            <test value="1">
+                propulsion/engine[1]/flameout eq 1
             </test>
         </switch>
 
