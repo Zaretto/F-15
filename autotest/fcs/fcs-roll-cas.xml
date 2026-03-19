@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<!--
+    Test: Roll CAS — rate command system with AOA-scheduled authority.
+    Verify CAS produces roll corrections proportional to rate error
+    and that authority reduces at high AOA.
+-->
+<runscript name="FCS - Roll CAS rate command">
+  <description>
+    Enable roll CAS in flight. Apply lateral stick and verify:
+    1. Rate command generates commanded roll rate
+    2. Rate error drives CAS output
+    3. AOA authority schedule modifies CAS gain
+    4. CAS disable switch zeros output
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-roll-cas.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/roll-cas/rate-commanded-deg_sec </property>
+    <property> fcs/roll-cas/rate-sensed-deg_sec </property>
+    <property> fcs/roll-cas/rate-error-deg_sec </property>
+    <property> fcs/roll-cas/error-gain-deg </property>
+    <property> fcs/roll-cas/aoa-authority </property>
+    <property> fcs/roll-cas/authority-applied-deg </property>
+    <property> fcs/roll-cas/output-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/aileron-cmd-scheduled </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> velocities/p-aero-rad_sec </property>
+  </output>
+
+  <run start="0.0" end="20.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Enable roll CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-roll-enable</property>
+      </notify>
+    </event>
+
+    <!-- Baseline: no roll input, CAS near zero -->
+    <event name="Baseline roll CAS">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/rate-error-deg_sec</property>
+        <property>fcs/roll-cas/aoa-authority</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <check property="fcs/roll-cas/rate-commanded-deg_sec" value="0" tol_abs="0.5" message="Roll rate command near zero with no input"/>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS output near zero at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Apply right roll stick -->
+    <event name="Apply 50% right roll stick">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check rate command generated -->
+    <event name="Check rate command at 0.3s">
+      <condition> simulation/sim-time-sec ge 5.3 </condition>
+      <notify>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/rate-error-deg_sec</property>
+        <property>fcs/roll-cas/error-gain-deg</property>
+        <property>fcs/roll-cas/aoa-authority</property>
+        <property>fcs/roll-cas/authority-applied-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <check property="fcs/roll-cas/aoa-authority" value="1.0" tol_abs="0.1" message="AOA authority near full at low AOA"/>
+      </notify>
+    </event>
+
+    <!-- Check as roll rate builds -->
+    <event name="Check roll CAS at 1s (rate building)">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <notify>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/rate-error-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Release roll -->
+    <event name="Release roll stick">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/roll-cas/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Apply left roll -->
+    <event name="Apply full left roll stick">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="-1.0"/>
+      <notify>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+      </notify>
+    </event>
+
+    <event name="Check full-authority left roll at 1s">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <notify>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/roll-cas/aoa-authority</property>
+      </notify>
+    </event>
+
+    <!-- Disable CAS -->
+    <event name="Disable roll CAS">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <set name="fcs/cas-roll-enable" value="0"/>
+      <notify>
+        <property>fcs/cas-roll-enable</property>
+      </notify>
+    </event>
+
+    <event name="Verify roll CAS output zeroed">
+      <condition> simulation/sim-time-sec ge 14.5 </condition>
+      <notify>
+        <property>fcs/roll-cas/authority-applied-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS output zeroed when disabled"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

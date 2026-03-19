@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<!--
+    Test: ARI — Dual mechanical/CAS Aileron-Rudder Interconnect.
+    Verify mechanical ARI produces rudder from lateral stick based on
+    stabilator position, and CAS ARI operates with AOA bias.
+-->
+<runscript name="FCS - ARI dual mechanical and CAS">
+  <description>
+    Test the dual ARI systems:
+    1. Mechanical ARI: active in flight, off at M>1.0 and on ground
+    2. CAS ARI: active when yaw CAS enabled, biased to 10deg AOA
+    3. Verify proverse/adverse gradient asymmetry
+    4. Verify ARI contributes to rudder mixing output
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-ari.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/ari/mechanical-demand-norm </property>
+    <property> fcs/ari/mechanical-output-norm </property>
+    <property> fcs/ari/cas-demand-norm </property>
+    <property> fcs/ari/cas-output-norm </property>
+    <property> fcs/yaw-mix/output-deg </property>
+    <property> velocities/mach </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/aileron-cmd-scheduled </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> fcs/cas-yaw-enable </property>
+  </output>
+
+  <run start="0.0" end="20.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Enable yaw CAS for CAS ARI">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <!-- Baseline: no roll input, ARI should be near zero -->
+    <event name="Baseline ARI">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>fcs/ari/mechanical-demand-norm</property>
+        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/ari/cas-demand-norm</property>
+        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/yaw-mix/output-deg</property>
+        <property>velocities/mach</property>
+        <check property="fcs/ari/mechanical-output-norm" value="0" tol_abs="0.01" message="Mechanical ARI near zero with no roll input"/>
+        <check property="fcs/ari/cas-output-norm" value="0" tol_abs="0.01" message="CAS ARI near zero with no roll input"/>
+      </notify>
+    </event>
+
+    <!-- Apply right roll with aft stick (proverse region) -->
+    <event name="Apply roll with aft stick (proverse)">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check ARI with aft stick">
+      <condition> simulation/sim-time-sec ge 5.5 </condition>
+      <notify>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/ari/mechanical-demand-norm</property>
+        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/ari/cas-demand-norm</property>
+        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/yaw-mix/output-deg</property>
+      </notify>
+    </event>
+
+    <!-- Apply roll with forward stick (adverse region) -->
+    <event name="Switch to forward stick (adverse)">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check ARI with forward stick">
+      <condition> simulation/sim-time-sec ge 8.5 </condition>
+      <notify>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/ari/mechanical-demand-norm</property>
+        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/ari/cas-demand-norm</property>
+        <property>fcs/ari/cas-output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Release all, disable CAS, check mechanical ARI only -->
+    <event name="Disable yaw CAS, apply roll only">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <set name="fcs/cas-yaw-enable" value="0"/>
+      <notify>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <event name="Check CAS ARI zeroed, mechanical still active">
+      <condition> simulation/sim-time-sec ge 11.5 </condition>
+      <notify>
+        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/ari/cas-output-norm</property>
+        <check property="fcs/ari/cas-output-norm" value="0" tol_abs="0.01" message="CAS ARI zeroed with yaw CAS disabled"/>
+      </notify>
+    </event>
+
+    <!-- Release all inputs -->
+    <event name="Release all">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/ari/cas-output-norm</property>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

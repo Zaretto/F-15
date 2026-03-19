@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    JSBSim property declarations with default values from f15-common.xml.
+    These ensure properties exist in the JSBSim property tree before any
+    system channel references them. Default values match what FlightGear
+    sets via f15-common.xml so that standalone/test-fg mode works correctly.
+-->
+<system>
+  <!-- CAS gains -->
+  <property>cas/ari-input</property>
+  <property>cas/roll-cas-crossfeed-gain</property>
+  <property>cas/beta-d-gain</property>
+  <property>cas/beta-pd</property>
+  <property>cas/beta-p-gain</property>
+  <property value="15.5">cas/pitch-cas-kq</property>
+  <property value="1.0">cas/pitch-cas-nz-gain</property>
+  <property value="1.0">cas/pitch-cas-nz-accel-gain</property>
+  <property value="2.0">cas/pitch-cas-stick-nz-gain</property>
+  <property value="1.5">cas/ptc-i-gain</property>
+  <property value="0.1">cas/ptc-cas-interconnect-gain</property>
+  <property value="7">cas/ptc-nz-accelerometer-c1</property>
+  <property value="1">cas/ptc-nz-accelerometer-limit</property>
+  <property value="0.267">cas/ptc-p-gain</property>
+  <property value="0.01">cas/ptc-roll-accel-gain</property>
+  <property value="0.01">cas/ptc-pitch-accel-gain</property>
+  <property value="2.0">cas/ptc-stick-to-g</property>
+  <property value="22">cas/yaw-cas-acceleration-gain</property>
+  <property value="0.02">cas/yaw-cas-crossfeed-gain</property>
+  <property value="0.005">cas/yaw-cas-feedback-gain</property>
+
+  <!-- FCS -->
+  <property>fcs/aim-fitted</property>
+  <property value="1">fcs/ari-lateral-enabled</property>
+  <property>fcs/cas-pitch-enable</property>
+  <property>fcs/cas-roll-enable</property>
+  <property>fcs/cas-yaw-enable</property>
+  <property>fcs/departure-cas-shutdown</property>
+  <property>fcs/flap-cmd-sum</property>
+  <property value="0.4">fcs/gun-weight-stab-bias-deg</property>
+  <property>fcs/hook-engage</property>
+  <property>fcs/pitch-ratio-emergency</property>
+  <property value="0.5">fcs/pitch-ratio-emergency-value</property>
+  <property value="1">fcs/ptc-enable</property>
+  <property>fcs/roll-cas-output</property>
+  <property>fcs/roll-ratio-emergency</property>
+  <property>fcs/steer-maneuver</property>
+  <property value="1">fcs/yaw-damper-enable</property>
+  <property value="1">fcs/yaw-damper-factor</property>
+  <property value="50">fcs/yaw-damper-factor-c1</property>
+
+  <!-- Gear -->
+  <property>gear/damage-reset</property>
+  <property>gear/emergency-handle</property>
+  <property>gear/emerg-pos</property>
+  <property>gear/emerg-pos-dmd</property>
+  <property>gear/gear-asym</property>
+  <property value="1">gear/gear-position-norm</property>
+  <property>gear/gear-warn-silence-dmd</property>
+  <property value="1">gear/serviceable</property>
+  <property>gear/unit[0]/locked</property>
+  <property>gear/unit[1]/locked</property>
+  <property>gear/unit[2]/locked</property>
+
+  <!-- Metrics -->
+  <property>metrics/aero-rp-x-in-base</property>
+  <property>metrics/stores-aiml-factor</property>
+  <property>metrics/stores-aimr-factor</property>
+  <property>metrics/stores-aiml-factor-negated</property>
+  <property>metrics/stores-aimr-factor-negated</property>
+  <property>metrics/stores-tank-factor</property>
+  <property>metrics/stores-tank-factor-c</property>
+  <property>metrics/stores-tank-factor-l</property>
+  <property>metrics/stores-tank-factor-l-negated</property>
+  <property>metrics/stores-tank-factor-r</property>
+  <property>metrics/two-place-canopy</property>
+
+  <!-- Position -->
+  <property>position/aircraft-on-ground</property>
+  <property value="2">position/aircraft-on-ground-last-value</property>
+
+  <!-- Propulsion -->
+  <property>propulsion/amad-fire</property>
+  <property>propulsion/amad-fire-button-armed</property>
+  <property>propulsion/amad-fire-test-ok</property>
+  <property>propulsion/cft</property>
+  <property>propulsion/damage-reset</property>
+  <property value="1">propulsion/engine-config-needed</property>
+  <property>propulsion/engine[0]/augmentation-alight</property>
+  <property>propulsion/engine[0]/blowout</property>
+  <property value="1.0">propulsion/engine[0]/config/burn-thru-point</property>
+  <property>propulsion/engine[0]/config/digital-eec</property>
+  <property>propulsion/engine[0]/config/engine-variance-delta-pla</property>
+  <property value="1.0">propulsion/engine[0]/config/fire-point</property>
+  <property value="1.0">propulsion/engine[0]/config/overtemp-point</property>
+  <property value="1">propulsion/engine[0]/config/variance</property>
+  <property>propulsion/engine[0]/eec-active</property>
+  <property>propulsion/engine[0]/fire-button-armed</property>
+  <property>propulsion/engine[0]/fire-extinguished</property>
+  <property>propulsion/engine[0]/fire-intensity</property>
+  <property>propulsion/engine[0]/fire-test-ok</property>
+  <property>propulsion/engine[0]/overtemp</property>
+  <property>propulsion/engine[1]/augmentation-alight</property>
+  <property>propulsion/engine[1]/blowout</property>
+  <property value="1.0">propulsion/engine[1]/config/burn-thru-point</property>
+  <property>propulsion/engine[1]/config/digital-eec</property>
+  <property>propulsion/engine[1]/config/engine-variance-delta-pla</property>
+  <property value="1.0">propulsion/engine[1]/config/fire-point</property>
+  <property value="1.0">propulsion/engine[1]/config/overtemp-point</property>
+  <property value="1">propulsion/engine[1]/config/variance</property>
+  <property>propulsion/engine[1]/eec-active</property>
+  <property>propulsion/engine[1]/fire-button-armed</property>
+  <property>propulsion/engine[1]/fire-extinguished</property>
+  <property>propulsion/engine[1]/fire-intensity</property>
+  <property>propulsion/engine[1]/fire-test-ok</property>
+  <property>propulsion/engine[1]/overtemp</property>
+  <property value="1">propulsion/fire-discharge-mode</property>
+  <property value="1">propulsion/fire-extinguisher-level</property>
+  <property>propulsion/inlet/l-inlet-ramp-emerg</property>
+  <property>propulsion/inlet/r-inlet-ramp-emerg</property>
+  <property>propulsion/inlet/ramp1-position-norm</property>
+  <property>propulsion/jfs-running</property>
+
+  <!-- Environment -->
+  <property>/environment/relative-humidity</property>
+  <property>/environment/dewpoint-degc</property>
+  <property>/accelerations/pilot-gdamped</property>
+  <property>/consumables/fuel/tank[5]/selected</property>
+  <property>/consumables/fuel/tank[6]/selected</property>
+
+  <!-- Simulation -->
+  <property>sim-time-sec</property>
+
+  <!-- AFCS -->
+  <property>systems/afcs/cas-roll-demand</property>
+  <property>systems/afcs/elevator-cmd-delta</property>
+  <property value="30">systems/afcs/heading-bank-max</property>
+  <property>systems/afcs/heading-hold-active</property>
+
+  <!-- Catapult -->
+  <property>systems/catapult/cat-pos-porm</property>
+
+  <!-- ECS -->
+  <property>systems/ecs/anti-fog</property>
+  <property>systems/ecs/bleed-air-source</property>
+  <property>systems/ecs/cabin-altitude-ft</property>
+  <property>systems/ecs/canopy-position-dmd</property>
+  <property value="293">systems/ecs/cockpit-temperature-k</property>
+  <property>systems/ecs/emerg-vent</property>
+  <property>systems/ecs/liquid-oxygen-activated</property>
+  <property>systems/ecs/oxygen-pressure-psi</property>
+  <property>systems/ecs/oxygen-qty-test</property>
+  <property>systems/ecs/oxygen-quantity-liters</property>
+  <property>systems/ecs/oxygen-supply-mode</property>
+  <property value="1">systems/ecs/pressurisation-active</property>
+  <property value="6750">systems/ecs/windscreen-factor1</property>
+  <property value="0.1">systems/ecs/windscreen-frost-amount-dmd-rate</property>
+  <property>systems/ecs/windscreen-heater-power-watts</property>
+  <property value="46">systems/ecs/windscreen-heater-watts-second</property>
+  <property value="290">systems/ecs/windscreen-temperature-k</property>
+  <property>systems/ecs/windshield-heat</property>
+
+  <!-- Electrics -->
+  <property value="115">systems/electrics/ac-essential-bus</property>
+  <property value="115">systems/electrics/ac-left-main-bus</property>
+  <property value="115">systems/electrics/ac-right-main-bus</property>
+  <property>systems/electrics/bus-tie-closed</property>
+  <property value="28">systems/electrics/dc-essential-bus</property>
+  <property value="28">systems/electrics/dc-left-bus</property>
+  <property value="28">systems/electrics/dc-main-bus</property>
+  <property value="28">systems/electrics/dc-right-bus</property>
+  <property value="0">systems/electrics/egenerator-kva</property>
+  <property value="1">systems/electrics/emerg-gen-mode</property>
+  <property>systems/electrics/emerg-generator-status</property>
+  <property>systems/electrics/emerg-ess-dc-bus</property>
+  <property>systems/electrics/ground-power</property>
+  <property>systems/electrics/jfs-pmg-power</property>
+  <property>systems/electrics/left-tr-failed</property>
+  <property value="1">systems/electrics/left-tr-online</property>
+  <property value="75">systems/electrics/lgenerator-kva</property>
+  <property value="1">systems/electrics/lgenerator-status</property>
+  <property>systems/electrics/master-test-lights</property>
+  <property>systems/electrics/right-tr-failed</property>
+  <property value="1">systems/electrics/right-tr-online</property>
+  <property value="75">systems/electrics/rgenerator-kva</property>
+  <property value="1">systems/electrics/rgenerator-status</property>
+  <property value="2">systems/electrics/transrect-online</property>
+
+  <!-- Hydraulics -->
+  <property>systems/hydraulics/emerg-gear-bleed</property>
+  <property value="1">systems/hydraulics/flight-controls-pressure</property>
+  <property value="2000">systems/hydraulics/jfs-accumulator-psi</property>
+  <property>systems/hydraulics/jfs-bleed</property>
+  <property value="3000">systems/hydraulics/normal-pressure</property>
+  <property value="3000">systems/hydraulics/pc1-psi</property>
+  <property value="1">systems/hydraulics/pc1-pressure</property>
+  <property>systems/hydraulics/pc1-pump-failed</property>
+  <property value="3000">systems/hydraulics/pc2-psi</property>
+  <property value="1">systems/hydraulics/pc2-pressure</property>
+  <property>systems/hydraulics/pc2-pump-failed</property>
+  <property value="3000">systems/hydraulics/util-left-normal-pressure</property>
+  <property>systems/hydraulics/util-left-pump-failed</property>
+  <property value="3000">systems/hydraulics/util-psi</property>
+  <property value="1">systems/hydraulics/util-pressure</property>
+  <property value="2775">systems/hydraulics/util-right-normal-pressure</property>
+  <property>systems/hydraulics/util-right-pump-failed</property>
+
+  <!-- Structural flight test -->
+  <property value="0.0213">systems/flyt/distortion-factor-per-g</property>
+  <property value="7.5">systems/flyt/max-g</property>
+  <property value="-3.0">systems/flyt/min-g</property>
+  <property value="0.02">systems/flyt/permanent-bend-factor</property>
+  <property>systems/flyt/stress-run</property>
+
+  <!-- Hook -->
+  <property value="10.1">systems/hook/tailhook-length-ft</property>
+  <property value="646">systems/hook/tailhook-offset-x-in</property>
+  <property value="0.0">systems/hook/tailhook-offset-y-in</property>
+  <property>systems/hook/tailhook-offset-z-in</property>
+  <property>systems/hook/tailhook-pos-deg</property>
+  <property value="52.369">systems/hook/tailhook-pos-max-deg</property>
+  <property>systems/hook/tailhook-pos-min-deg</property>
+
+  <!-- Holdback / catapult -->
+  <property>systems/holdback/holdback-cmd</property>
+  <property>systems/holdback/launchbar-engaged</property>
+
+  <!-- NWS -->
+  <property>systems/NWS/engaged</property>
+
+  <!-- Tuning -->
+  <property value="1.0">tuning1</property>
+</system>

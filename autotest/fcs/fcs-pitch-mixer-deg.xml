@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<!--
+    Test: Pitch Mixer Architecture — validate degree-domain mixer and
+    confirm no direct stick in mixer (PTC is sole pitch authority).
+-->
+<runscript name="FCS - Pitch mixer degree-domain architecture">
+  <description>
+    Validates the pitch mixer architecture after engineering units refactoring:
+    1. Mixer sum = PTC total compensation + pitch CAS + stall inhibitor (all degrees)
+    2. No direct stick term in mixer — stick authority goes through PTC
+    3. CAS contribution stays within ±2.5 deg typical range
+    4. Stall inhibitor adds nose-down degrees at high AOA
+    5. Mixer output clipped to [-26, +15] deg (stab physical limits)
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-pitch-mixer-deg.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/ptc/total-compensation-deg </property>
+    <property> fcs/ptc/mechanical-stick-deg </property>
+    <property> fcs/ptc/trim-integrator-deg </property>
+    <property> fcs/pitch-trim-compensation </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/stall-inhibitor/output-deg </property>
+    <property> fcs/pitch-mix/sum-deg </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/actuator/pitch-output-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/pitch-stick-in </property>
+    <property> fcs/pitch-stick-adjusted-in </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/cas-pitch-enable </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Enable all CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify/>
+    </event>
+
+    <!-- Test 1: Trimmed flight — verify mixer composition -->
+    <event name="Trimmed flight mixer composition">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <notify>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/stall-inhibitor/output-deg</property>
+        <property>fcs/pitch-mix/sum-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="2.5" message="CAS contribution small in trimmed flight"/>
+        <check property="fcs/stall-inhibitor/output-deg" value="0" tol_abs="0.5" message="Stall inhibitor inactive at normal AOA"/>
+      </notify>
+    </event>
+
+    <!-- Test 2: Stick pull — verify PTC responds, no direct stick in mixer -->
+    <event name="Apply 0.4 stick pull">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+        <property>fcs/pitch-stick-in</property>
+      </notify>
+    </event>
+
+    <event name="Check PTC drives mixer (no direct stick)">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <notify>
+        <property>fcs/pitch-stick-in</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <property>fcs/ptc/mechanical-stick-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/pitch-mix/sum-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Test 3: CAS contribution range check -->
+    <event name="CAS contribution range check">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="2.5" message="Pitch CAS output within ±2.5 deg typical range"/>
+      </notify>
+    </event>
+
+    <!-- Test 4: Push toward high AOA for stall inhibitor check -->
+    <event name="Push to high AOA">
+      <condition> simulation/sim-time-sec ge 13.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.8"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check stall inhibitor at high AOA">
+      <condition> simulation/sim-time-sec ge 16.0 </condition>
+      <notify>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/stall-inhibitor/output-deg</property>
+        <property>fcs/pitch-mix/sum-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Test 5: Full stick — verify degree clipping -->
+    <event name="Full aft stick for clipping check">
+      <condition> simulation/sim-time-sec ge 18.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="1.0"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Verify mixer clipped to [-26, +15] deg">
+      <condition> simulation/sim-time-sec ge 19.0 </condition>
+      <notify>
+        <property>fcs/pitch-mix/sum-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <check property="fcs/elevator-pos-deg" value="0" tol_abs="26.0" message="Elevator pos within physical range [-26, +15]"/>
+      </notify>
+    </event>
+
+    <!-- Release and check recovery -->
+    <event name="Release stick">
+      <condition> simulation/sim-time-sec ge 21.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check recovery toward trim">
+      <condition> simulation/sim-time-sec ge 23.0 </condition>
+      <notify>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

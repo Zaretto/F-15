@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!--
+    Test: PTC Closed-Loop — Nz error integration and CAS interconnect.
+    Verify that the PTC integrator drives toward zero Nz error and
+    that the CAS-PTC interconnect feeds pitch CAS output into trim.
+-->
+<runscript name="FCS - PTC closed-loop Nz trim">
+  <description>
+    In flight with CAS enabled, verify:
+    1. PTC Nz error tracks difference between sensed and commanded Nz
+    2. Trim integrator drives to reduce error
+    3. CAS-PTC interconnect contributes to trim
+    4. PTC output stays within clip limits (-2.0 to +5.5 deg)
+    5. Baseline PTC tables still provide schedule contribution
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-ptc-closed-loop.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/sensor/nz-g </property>
+    <property> fcs/ptc/nz-commanded-g </property>
+    <property> fcs/ptc/nz-error-g </property>
+    <property> fcs/ptc/error-scaled </property>
+    <property> fcs/ptc/cas-interconnect </property>
+    <property> fcs/ptc/trim-integrator-deg </property>
+    <property> fcs/pitch-trim-compensation </property>
+    <property> fcs/ptc/total-compensation-deg </property>
+    <property> fcs/pitch-stick-in </property>
+    <property> fcs/pitch-stick-adjusted-in </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/cas-pitch-enable </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/cas-yaw-enable </property>
+  </output>
+
+  <run start="0.0" end="30.0" dt="0.008333">
+
+    <!-- Establish engines -->
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Enable all CAS axes -->
+    <event name="Enable CAS all axes">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify/>
+    </event>
+
+    <!-- Baseline trim state -->
+    <event name="Baseline PTC state - level flight">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>fcs/ptc/nz-commanded-g</property>
+        <property>fcs/ptc/nz-error-g</property>
+        <property>fcs/ptc/error-scaled</property>
+        <property>fcs/ptc/cas-interconnect</property>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/pitch-trim-compensation</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <check property="fcs/sensor/nz-g" value="1.0" tol_abs="0.5" message="Nz approaching 1g (PTC settling from init)"/>
+        <check property="fcs/ptc/nz-error-g" value="0" tol_abs="0.5" message="Nz error reducing toward zero (PTC settling)"/>
+      </notify>
+    </event>
+
+    <!-- Pull back stick to demand positive Nz -->
+    <event name="Apply 0.3 stick pull (demand ~0.6g above trim)">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+      </notify>
+    </event>
+
+    <!-- Check Nz error and integrator response -->
+    <event name="PTC response at 1s after pull">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>fcs/ptc/nz-commanded-g</property>
+        <property>fcs/ptc/nz-error-g</property>
+        <property>fcs/ptc/error-scaled</property>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/ptc/cas-interconnect</property>
+        <check property="fcs/ptc/total-compensation-deg" value="0" tol_abs="5.5" message="PTC total compensation within clip limits"/>
+      </notify>
+    </event>
+
+    <!-- Check integrator building over 5s -->
+    <event name="PTC integrator at 5s into pull">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <notify>
+        <property>fcs/ptc/nz-error-g</property>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+      </notify>
+    </event>
+
+    <!-- Release stick — integrator should hold then decay -->
+    <event name="Release stick">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+      </notify>
+    </event>
+
+    <!-- Check integrator decay over time -->
+    <event name="PTC decay at 5s after release">
+      <condition> simulation/sim-time-sec ge 19.0 </condition>
+      <notify>
+        <property>fcs/ptc/nz-error-g</property>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+      </notify>
+    </event>
+
+    <!-- Push stick forward to check negative limit -->
+    <event name="Apply forward stick (negative Nz demand)">
+      <condition> simulation/sim-time-sec ge 22.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check PTC negative limit">
+      <condition> simulation/sim-time-sec ge 27.0 </condition>
+      <notify>
+        <property>fcs/ptc/nz-error-g</property>
+        <property>fcs/ptc/trim-integrator-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <check property="fcs/ptc/trim-integrator-deg" value="-2.5" tol_abs="3.0" message="PTC trim integrator within negative clip limit (-5.5 deg)"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

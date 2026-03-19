@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<!--
+    Test: CAS On/Off Comparison — verify aircraft is flyable with CAS
+    disabled (mechanical only) and that CAS on/off transitions are clean.
+-->
+<runscript name="FCS - CAS on/off comparison and transitions">
+  <description>
+    Fly with CAS disabled (mechanical-only), then enable CAS mid-flight.
+    Verify:
+    1. Mechanical path alone produces valid surface positions
+    2. CAS enable/disable transitions don't produce transients
+    3. All CAS axes can be independently toggled
+    4. Outputs remain within valid ranges throughout
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-cas-on-off.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/cas-pitch-enable </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/cas-yaw-enable </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/roll-cas/output-norm </property>
+    <property> fcs/yaw-cas/output-norm </property>
+    <property> fcs/pitch-stick-adjusted-in-in </property>
+    <property> fcs/pitch-ratio </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/actuator/pitch-output-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/aileron-cmd-scheduled </property>
+    <property> fcs/roll-ratio </property>
+    <property> fcs/roll-mix/output-norm </property>
+    <property> fcs/actuator/roll-output-norm </property>
+    <property> fcs/aileron-pos-deg </property>
+    <property> fcs/rudder-pos-deg </property>
+    <property> fcs/ptc/total-compensation-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+  </output>
+
+  <run start="0.0" end="30.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- CAS OFF — fly on mechanical path only -->
+    <event name="Verify CAS all OFF">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+        <property>fcs/cas-roll-enable</property>
+        <property>fcs/cas-yaw-enable</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <check property="fcs/cas-pitch-enable" value="0" message="Pitch CAS disabled"/>
+        <check property="fcs/cas-roll-enable" value="0" message="Roll CAS disabled"/>
+        <check property="fcs/cas-yaw-enable" value="0" message="Yaw CAS disabled"/>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="0.01" message="Pitch CAS output zero when disabled"/>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS output zero when disabled"/>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output zero when disabled"/>
+      </notify>
+    </event>
+
+    <!-- Apply pitch input with CAS OFF -->
+    <event name="Pitch input with CAS OFF">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check mechanical-only pitch response">
+      <condition> simulation/sim-time-sec ge 3.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <property>fcs/pitch-ratio</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="0.01" message="Pitch CAS output remains zero (CAS off)"/>
+      </notify>
+    </event>
+
+    <!-- Apply roll with CAS OFF -->
+    <event name="Roll input with CAS OFF">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <set name="fcs/aileron-cmd-norm" value="0.6"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check mechanical-only roll response">
+      <condition> simulation/sim-time-sec ge 5.5 </condition>
+      <notify>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS output remains zero (CAS off)"/>
+      </notify>
+    </event>
+
+    <!-- Neutralize, then enable CAS one axis at a time -->
+    <event name="Neutralize inputs">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Enable pitch CAS only -->
+    <event name="Enable pitch CAS only">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+        <property>fcs/cas-roll-enable</property>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <event name="Record state after pitch CAS enable">
+      <condition> simulation/sim-time-sec ge 10.5 </condition>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS still zero (only pitch enabled)"/>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS still zero (only pitch enabled)"/>
+      </notify>
+    </event>
+
+    <!-- Enable roll CAS -->
+    <event name="Enable roll CAS">
+      <condition> simulation/sim-time-sec ge 13.0 </condition>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-roll-enable</property>
+      </notify>
+    </event>
+
+    <event name="Record state after roll CAS enable">
+      <condition> simulation/sim-time-sec ge 13.5 </condition>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS still zero (yaw not yet enabled)"/>
+      </notify>
+    </event>
+
+    <!-- Enable yaw CAS -->
+    <event name="Enable yaw CAS">
+      <condition> simulation/sim-time-sec ge 16.0 </condition>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <event name="Record state all CAS enabled">
+      <condition> simulation/sim-time-sec ge 16.5 </condition>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Apply maneuver with all CAS on and verify -->
+    <event name="Apply pitch with all CAS enabled">
+      <condition> simulation/sim-time-sec ge 19.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check CAS+mechanical combined response">
+      <condition> simulation/sim-time-sec ge 19.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Disable all CAS simultaneously while stick held -->
+    <event name="Disable all CAS with stick held">
+      <condition> simulation/sim-time-sec ge 23.0 </condition>
+      <set name="fcs/cas-pitch-enable" value="0"/>
+      <set name="fcs/cas-roll-enable" value="0"/>
+      <set name="fcs/cas-yaw-enable" value="0"/>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+      </notify>
+    </event>
+
+    <event name="Check clean transition to mechanical-only">
+      <condition> simulation/sim-time-sec ge 23.5 </condition>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="0.01" message="Pitch CAS output zero after disable"/>
+        <check property="fcs/roll-cas/output-norm" value="0" tol_abs="0.01" message="Roll CAS output zero after disable"/>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output zero after disable"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+    Initialization: on ground with both engines at idle (~65% N2).
+    Hydraulics fully pressurized, JFS accumulator charged.
+-->
+<initialize name="engines-running">
+  <ubody unit="FT/SEC"> 0.0 </ubody>
+  <vbody unit="FT/SEC"> 0.0 </vbody>
+  <wbody unit="FT/SEC"> 0.0 </wbody>
+  <longitude unit="DEG"> -0.3 </longitude>
+  <latitude unit="DEG"> 51.27 </latitude>
+  <phi unit="DEG"> 0.0 </phi>
+  <theta unit="DEG"> 0.0 </theta>
+  <psi unit="DEG"> 270.0 </psi>
+  <altitude unit="FT"> 3.0 </altitude>
+</initialize>

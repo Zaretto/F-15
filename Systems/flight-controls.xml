@@ -9,14 +9,15 @@
        - MCAIR Eagle Talk (Longitudinal/Lateral/Directional Control articles)
 
      Channel order:
-       1. Sensors            - Filtered rate gyros, accelerometer, AOA prefilter
+       0. Initialization      - Init ramp (0→1 over 2s) to prevent CAS/PTC transient
+       1. Sensors             - Filtered rate gyros, accelerometer, AOA prefilter, yaw accel
        2. Mechanical          - Stick shaping, feel spring, pitch/roll ratio changers
-       3. Pitch CAS           - PI controller with washout + lead-lag
+       3. Pitch CAS           - C* controller: Nz + pitch_accel + rate×Kq + stick_cmd → PI (+-2.5 cmd)
        4. PTC                 - Closed-loop load factor trim
        5. Roll CAS            - Rate command system
-       6. Yaw CAS             - PI controller + notch filter + crossfeed
+       6. Yaw CAS             - Accel + rate + crossfeed → PI (per AEDC-TR-80-60)
        7. Departure Protection - Spin detection, CAS shutdown
-       8. ARI                 - Dual mechanical/CAS
+       8. ARI                 - Dual mechanical/CAS (CAS scheduled by roll rate × AOA)
        9. Stall Inhibitor     - Pitch rate to AOA conversion
       10. Mixing              - Sum mechanical + CAS + PTC + AFCS
       11. Actuators           - lag_filter replacing kinematic
@@ -32,13 +33,34 @@
 -->
 
     <!-- ================================================================== -->
+    <!-- Ch 0: INITIALIZATION — ramp CAS/PTC authority 0→1 over 2 seconds  -->
+    <!-- Prevents integrator windup from Nz transient at sim start          -->
+    <!-- Documentation: Docs/F-15-FCS.md                                    -->
+    <!-- ================================================================== -->
+    <channel name="Initialization">
+        <fcs_function name="fcs/init-ramp">
+            <function>
+                <table>
+                    <independentVar lookup="row">simulation/sim-time-sec</independentVar>
+                    <tableData>
+                        0.0  0.0
+                        2.0  1.0
+                    </tableData>
+                </table>
+            </function>
+        </fcs_function>
+    </channel>
+
+    <!-- ================================================================== -->
     <!-- Ch 1: SENSORS - filtered rate gyros, accelerometer, AOA prefilter  -->
     <!-- ================================================================== -->
     <channel name="Sensors">
         <!-- Pitch rate: direct from aero model, no prefilter needed for CAS -->
 
-        <!-- Roll rate prefilter: 3.333/(s+3.333), tau=300ms -->
-        <lag_filter name="fcs/sensor/roll-rate-rad_sec">
+        <!-- Roll rate sensor: unfiltered for CAS feedback.
+             The 3.333/(s+3.333) prefilter belongs on the COMMAND path per schematic,
+             not the sensor path. ARI uses this filtered version for scheduling. -->
+        <lag_filter name="fcs/sensor/roll-rate-filtered-rad_sec">
             <input>velocities/p-aero-rad_sec</input>
             <c1>3.333</c1>
         </lag_filter>
@@ -70,6 +92,51 @@
                 </product>
             </function>
         </fcs_function>
+
+        <!-- Yaw acceleration: derivative of yaw rate via washout with fast time constant
+             Per AEDC-TR-80-60 schematic: yaw acc (rad/sec2) is a separate input to yaw CAS -->
+        <washout_filter name="fcs/sensor/yaw-accel-rad_sec2">
+            <input>velocities/r-aero-rad_sec</input>
+            <c1>20</c1>
+        </washout_filter>
+
+        <!-- CAS enable switches: match original property names for compatibility.
+             Pitch damper only active when stick is near center (within ±0.15).
+             Uses prefiltered stick (after 5/(s+5) lag from Ch2) to avoid abrupt
+             CAS on/off transients when stick crosses the threshold.
+             Yaw damper requires roll CAS active (ganged switches). -->
+        <!-- Pitch damper gate: originally ±0.75 inches (15% of stick range),
+             but this disables pitch rate damping during all maneuvering.
+             The pitch CAS has a stick-Nz feedforward that prevents it from
+             fighting the pilot's command, making the tight gate unnecessary.
+             Widened to ±4.0 inches (80%) so CAS stays active during normal
+             maneuvering while still disabling at extreme stick deflections
+             (departure recovery, full stick inputs). -->
+        <switch name="fcs/pitch-damper-active">
+            <default value="0.0"/>
+            <test logic="AND" value="1">
+                fcs/pitch-stick-in ge -4.0
+                fcs/pitch-stick-in le 4.0
+                fcs/cas-pitch-enable ne 0.0
+            </test>
+            <output>fcs/pitch-damper-active</output>
+        </switch>
+
+        <switch name="fcs/roll-cas-active">
+            <default value="0.0"/>
+            <test logic="AND" value="1">
+                fcs/cas-roll-enable ne 0.0
+            </test>
+            <output>fcs/roll-cas-active</output>
+        </switch>
+
+        <switch name="fcs/yaw-damper-active">
+            <default value="0.0"/>
+            <test logic="AND" value="1">
+                fcs/cas-yaw-enable ne 0.0
+            </test>
+            <output>fcs/yaw-damper-active</output>
+        </switch>
     </channel>
 
     <!-- ================================================================== -->
@@ -118,6 +185,17 @@
             <c1>5</c1>
         </lag_filter>
 
+        <!-- Convert to inches: F-15 stick travel ±5 in longitudinal, ±3 in lateral -->
+        <pure_gain name="fcs/pitch-stick-in">
+            <input>fcs/pitch-stick-prefiltered-norm</input>
+            <gain>5.0</gain>
+        </pure_gain>
+
+        <pure_gain name="fcs/roll-stick-in">
+            <input>fcs/aileron-cmd-scheduled</input>
+            <gain>3.0</gain>
+        </pure_gain>
+
         <!-- ============================================================ -->
         <!-- Pitch Ratio Changer                                          -->
         <!-- Scheduled by qbar and CG per MCAIR Eagle Talk description    -->
@@ -125,20 +203,26 @@
         <!-- ============================================================ -->
         <fcs_function name="fcs/pitch-ratio-calc-0">
             <description>
-                Pitch Ratio: qbar schedule. 1:1 at low qbar, 1:6 at high qbar.
-                ref: NASA TM 72861, MCAIR Eagle Talk
+                Pitch Ratio: qbar schedule per NASA TM-72861 Fig 17 / MCAIR Eagle Talk.
+                High qbar reduces stick-to-stab gearing to prevent overstress.
+                Extended schedule to 1800 psf to maintain authority at high Mach.
+                Minimum 0.25 ensures usable pitch control in supersonic flight.
             </description>
             <function>
                 <table>
                     <independentVar lookup="row">aero/qbar-psf</independentVar>
                     <tableData>
-                        300  1.00000
-                        1300 0.16667
+                        200  1.00000
+                        400  0.80000
+                        700  0.50000
+                        1000 0.35000
+                        1300 0.28000
+                        1800 0.25000
                     </tableData>
                 </table>
             </function>
             <clipto>
-                <min>0.166667</min>
+                <min>0.25</min>
                 <max>1.0</max>
             </clipto>
         </fcs_function>
@@ -183,9 +267,9 @@
             </test>
         </switch>
 
-        <!-- Apply pitch ratio to stick input -->
-        <pure_gain name="fcs/pitch-stick-adjusted">
-            <input>fcs/pitch-stick-prefiltered-norm</input>
+        <!-- Apply pitch ratio to stick input (output in ratio-adjusted inches) -->
+        <pure_gain name="fcs/pitch-stick-adjusted-in">
+            <input>fcs/pitch-stick-in</input>
             <gain>fcs/pitch-ratio</gain>
         </pure_gain>
 
@@ -196,7 +280,8 @@
         <fcs_function name="fcs/pitch-trim-compensation">
             <function>
                 <product>
-                    <v>1</v>
+                    <v>20.5</v> <!-- Convert legacy normalized table data to degrees
+                                     (stab half-range = 20.5 deg) for PTC deg-domain math -->
                     <sum>
                         <!-- PTC PRESET ELEVATOR TRIM(DEGREES) DUE TO AIRSPEED AND MAC% F(VC, MAC%) -->
                         <table>
@@ -297,28 +382,34 @@
             </function>
         </fcs_function>
 
-        <!-- Roll Ratio: stabilator-position schedule per reference
-             Peaks ~1.0 at ~5deg TEU stab, decreases at extremes -->
+        <!-- Filtered stabilator position for ARI scheduling.
+             Lag filter (tau=1s) prevents transient stab deflections from
+             collapsing ARI authority. -->
+        <lag_filter name="fcs/roll-ratio/filtered-stab-deg">
+            <input>fcs/elevator-pos-deg</input>
+            <c1>1.0</c1>
+        </lag_filter>
+
+        <!-- Lateral Ratio Schedule (7) per schematic (fcs-lateral-roll.png):
+             2D table f(yaw_rate, stab_cmd). Multiplied with lateral stick.
+             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (7) data -->
         <fcs_function name="fcs/roll-ratio-dmd">
-            <description>Roll ratio scheduled by stabilator position (replaces linear Vc formula)</description>
             <function>
                 <table>
-                    <independentVar lookup="row">fcs/elevator-pos-deg</independentVar>
+                    <independentVar lookup="row">fcs/sensor/yaw-rate-rad_sec</independentVar>
+                    <independentVar lookup="column">fcs/elevator-pos-deg</independentVar>
                     <tableData>
-                        -26  0.20
-                        -20  0.30
-                        -15  0.50
-                        -10  0.80
-                         -5  1.00
-                          0  0.90
-                          5  0.70
-                         10  0.40
-                         15  0.20
+                                 -20     -10       0      10
+                        -1.5     0.15    0.20    0.20    0.15
+                        -0.5     0.50    0.70    0.70    0.50
+                         0.0     0.70    1.00    1.00    0.70
+                         0.5     0.50    0.70    0.70    0.50
+                         1.5     0.15    0.20    0.20    0.15
                     </tableData>
                 </table>
             </function>
             <clipto>
-                <min>0.20</min>
+                <min>0.15</min>
                 <max>1.0</max>
             </clipto>
         </fcs_function>
@@ -338,6 +429,7 @@
 
     <!-- ================================================================== -->
     <!-- Ch 3: PITCH CAS â€” PI controller per NASA TM-72861                  -->
+    <!-- Schematic: Docs/fcs-pitch-cas.png  |  Docs/F-15-FCS.md             -->
     <!-- q -> washout -> lead-lag -> Kq -> PI -> variable limiter -> servo  -->
     <!-- ================================================================== -->
     <channel name="Pitch CAS">
@@ -356,15 +448,53 @@
             <c4>1</c4>
         </lead_lag_filter>
 
-        <!-- Kq gain -->
+        <!-- Kq gain: pitch rate path -->
         <pure_gain name="fcs/pitch-cas/kq-output-deg">
             <input>fcs/pitch-cas/lead-lag-rad_sec</input>
             <gain>cas/pitch-cas-kq</gain>
         </pure_gain>
 
+        <!-- C* feedback path 1: Nz (load factor) per schematic fcs-pitch-cas.png
+             LOAD FACTOR enters pre-PI summer with (+) sign -->
+        <pure_gain name="fcs/pitch-cas/nz-feedback-deg">
+            <input>fcs/sensor/nz-g</input>
+            <gain>cas/pitch-cas-nz-gain</gain>
+        </pure_gain>
+
+        <!-- C* feedback path 2: Pitch acceleration (rad/sec2)
+             PITCH ACCEL enters pre-PI summer with (+) sign -->
+        <pure_gain name="fcs/pitch-cas/nz-accel-feedback-deg">
+            <input>accelerations/qdot-rad_sec2</input>
+            <gain>cas/pitch-cas-nz-accel-gain</gain>
+        </pure_gain>
+
+        <!-- C* feedback path 3: Stick Nz command feedforward
+             LONGITUDINAL STICK (in) × 2.0 g/in → prefilter 5/(S+5) → enters (+)
+             fcs/pitch-stick-in already has the 5/(S+5) from Ch2 and is in inches -->
+        <fcs_function name="fcs/pitch-cas/stick-nz-cmd-deg">
+            <function>
+                <product>
+                    <property>fcs/pitch-stick-in</property>
+                    <property>cas/pitch-cas-stick-nz-gain</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Pre-PI summer: sum all 4 inputs per schematic
+             1. Pitch rate × Kq (washout → lead-lag → gain)
+             2. Nz feedback
+             3. Pitch acceleration feedback
+             4. Stick Nz command feedforward -->
+        <summer name="fcs/pitch-cas/pre-pi-sum-deg">
+            <input>fcs/pitch-cas/kq-output-deg</input>
+            <input>fcs/pitch-cas/nz-feedback-deg</input>
+            <input>fcs/pitch-cas/nz-accel-feedback-deg</input>
+            <input>fcs/pitch-cas/stick-nz-cmd-deg</input>
+        </summer>
+
         <!-- Anti-windup clip for integrator input -->
         <pure_gain name="fcs/pitch-cas/integrator-input-deg">
-            <input>fcs/pitch-cas/kq-output-deg</input>
+            <input>fcs/pitch-cas/pre-pi-sum-deg</input>
             <gain>1.0</gain>
             <clipto>
                 <min>-0.1</min>
@@ -372,7 +502,11 @@
             </clipto>
         </pure_gain>
 
-        <!-- Integrator: 1/s with anti-windup limits -->
+        <!-- Integrator: 1/s with anti-windup limits.
+             CAS command authority is +-2.5 deg (PI controller output limit).
+             The +-10 deg is the series servo physical travel range, not the
+             CAS command range. Per Garrison: "CAS interconnect servo drives the
+             PTC in the direction to keep the CAS series servo centered." -->
         <integrator name="fcs/pitch-cas/integrator-deg">
             <input>fcs/pitch-cas/integrator-input-deg</input>
             <c1>1.0</c1>
@@ -382,13 +516,22 @@
             </clipto>
         </integrator>
 
-        <!-- PI sum: proportional (Kq output) + integral -->
+        <!-- PI sum: proportional (pre-PI sum) + integral -->
         <summer name="fcs/pitch-cas/pi-sum-deg">
-            <input>fcs/pitch-cas/kq-output-deg</input>
+            <input>fcs/pitch-cas/pre-pi-sum-deg</input>
             <input>fcs/pitch-cas/integrator-deg</input>
         </summer>
 
-        <!-- Variable limiter: full authority +-2.5deg for stab +5 to -19, zero outside -->
+        <!-- Variable limiter: CAS command authority +-2.5 deg within stab range +5 to -19.
+             The +-10 deg figure from NASA TM-72861 / Garrison is the series servo
+             physical travel range. The CAS PI controller commands are limited to +-2.5 deg,
+             and the PTC interconnect servo keeps the CAS servo centered so it doesn't
+             saturate at the +-10 deg servo stops.
+             Ref: NASA TM-72861 Fig 18, Garrison Eagle Talk
+             Schedule (3): Pitch CAS Limit — variable authority limit f(stab_position).
+             TODO: Verify against AEDC-TR-80-60 schedule (3) data.
+             Current implementation limits CAS authority to ±2.5 deg within
+             stab range -19 to +5, zeroing at physical limits. -->
         <fcs_function name="fcs/pitch-cas/authority-limit-deg">
             <function>
                 <table>
@@ -427,43 +570,113 @@
         </lag_filter>
 
         <!-- CAS enable gate -->
-        <switch name="fcs/pitch-cas/output-deg">
+        <switch name="fcs/pitch-cas/output-deg-raw">
             <default value="0"/>
             <test logic="AND" value="fcs/pitch-cas/servo-deg">
-                fcs/cas-pitch-enable ne 0
+                fcs/pitch-damper-active ne 0
                 fcs/departure-cas-shutdown eq 0
             </test>
         </switch>
 
-        <!-- Normalize CAS output from degrees to stabilator normalized travel.
-             Stab range is 41 deg (-26 to +15), so 1 normalized unit = 20.5 deg. -->
-        <pure_gain name="fcs/pitch-cas/output-norm">
-            <input>fcs/pitch-cas/output-deg</input>
-            <gain>0.04878</gain>  <!-- 1/20.5 -->
-        </pure_gain>
+        <!-- AOA-based pitch CAS washout: gradual reduction above ~15 deg AOA.
+             Per Garrison: "By washing out the pitch CAS at high angles of attack,
+             the stick forces and aircraft motion look the same pitch CAS on or off -
+             i.e. - the nose gets heavy at the same speeds because the CAS cannot
+             deliver the extra 10 degrees of CAS stabilator authority" -->
+        <fcs_function name="fcs/pitch-cas/aoa-washout-factor">
+            <function>
+                <table>
+                    <independentVar lookup="row">fcs/sensor/aoa-deg</independentVar>
+                    <tableData>
+                        -5   1.0
+                         5   1.0
+                        10   0.9
+                        15   0.7
+                        20   0.4
+                        25   0.1
+                        30   0.0
+                    </tableData>
+                </table>
+            </function>
+        </fcs_function>
+
+        <!-- Apply init ramp and AOA washout -->
+        <fcs_function name="fcs/pitch-cas/output-deg">
+            <function>
+                <product>
+                    <property>fcs/pitch-cas/output-deg-raw</property>
+                    <property>fcs/init-ramp</property>
+                    <property>fcs/pitch-cas/aoa-washout-factor</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Pitch CAS output is now used directly in degrees by the pitch mixer.
+             No normalization needed — degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
     <!-- Ch 4: PTC â€” Closed-loop load factor trim                           -->
+    <!-- Schematic: Docs/fcs-ptc.png  |  Docs/F-15-FCS.md                   -->
     <!-- Keeps existing baseline tables, adds Nz error integration on top   -->
     <!-- ================================================================== -->
     <channel name="PTC">
-        <!-- Commanded Nz from stick: 1g (level flight) + stick * 2.0 g/in -->
+        <!-- Commanded Nz from stick.
+             Per PTC schematic (Docs/fcs-ptc.png, AEDC-TR-80-60):
+               LONGITUDINAL STICK POSITION (in) × 2.0 g/in enters error summer with (-).
+             This is the RAW stick position BEFORE pitch ratio (the 2.0 g/in force
+             gradient is a property of the stick feel system, not the control gearing).
+             fcs/pitch-stick-in is already in inches (±5 in).
+             In JSBSim, aft stick is negative, so we negate: nz_cmd = 1.0 - stick_in × 2.0
+             The 1.0g offset = accelerometer reads 1g level, schematic is incremental.
+             Ref: Garrison "about four pounds of stick force results in one-half inch
+             of stick displacement, producing a load factor of one g" (4.25 lb/g,
+             Fs/g confirmed in NASA TM-72861). -->
+        <!-- Nz command clipped to [0, 9]g.
+             In the real F-15, the force gradient system prevents stick positions
+             that would command extreme negative g. On a desktop joystick, small
+             forward inputs can easily reach -2g or worse. The 0g floor prevents
+             the PTC from driving aggressive pushover — for unloaded/negative-g
+             flight, the pilot uses direct pitch control (CAS only, no PTC ramp). -->
         <fcs_function name="fcs/ptc/nz-commanded-g">
             <function>
                 <sum>
                     <value>1.0</value>
                     <product>
-                        <property>fcs/pitch-stick-adjusted</property>
+                        <value>-1.0</value>
+                        <property>fcs/pitch-stick-in</property>
                         <property>cas/ptc-stick-to-g</property>
                     </product>
                 </sum>
             </function>
+            <clipto>
+                <min>0.0</min>
+                <max>9.0</max>
+            </clipto>
         </fcs_function>
 
-        <!-- Nz error: sensed - commanded -->
+        <!-- Roll and pitch acceleration inputs to PTC error summer per schematic (fcs-ptc.png):
+             ROLL ACCEL and PITCH ACCEL enter alongside LOAD FACTOR with (+) sign -->
+        <pure_gain name="fcs/ptc/roll-accel-input">
+            <input>accelerations/pdot-rad_sec2</input>
+            <gain>cas/ptc-roll-accel-gain</gain>
+        </pure_gain>
+        <pure_gain name="fcs/ptc/pitch-accel-input">
+            <input>accelerations/qdot-rad_sec2</input>
+            <gain>cas/ptc-pitch-accel-gain</gain>
+        </pure_gain>
+
+        <!-- Nz error: sensed - commanded + roll_accel + pitch_accel.
+             Per PTC schematic (Docs/fcs-ptc.png, AEDC-TR-80-60):
+               Error = LOAD_FACTOR(+) + ROLL_ACCEL(+) + PITCH_ACCEL(+) - Stick×2.0(-)
+             Negative error = aircraft under-responding → integrator ramps negative →
+             PTC output more negative → stabilator more TED → nose UP = corrective.
+             Ref: Garrison Eagle Talk "the PTC will move the stabilator in the
+             direction to maintain the g schedule" -->
         <summer name="fcs/ptc/nz-error-g">
             <input>fcs/sensor/nz-g</input>
+            <input>fcs/ptc/roll-accel-input</input>
+            <input>fcs/ptc/pitch-accel-input</input>
             <input>-fcs/ptc/nz-commanded-g</input>
         </summer>
 
@@ -477,77 +690,164 @@
             </clipto>
         </pure_gain>
 
-        <!-- CAS-PTC interconnect: pitch CAS output feeds into PTC -->
-        <pure_gain name="fcs/ptc/cas-interconnect">
+        <!-- CAS-PTC interconnect: pitch CAS output × 0.2, clipped ±1 per schematic -->
+        <pure_gain name="fcs/ptc/cas-interconnect-raw">
             <input>fcs/pitch-cas/output-deg</input>
             <gain>cas/ptc-cas-interconnect-gain</gain>
         </pure_gain>
 
-        <!-- Sum error + interconnect -->
-        <summer name="fcs/ptc/integrator-input">
-            <input>fcs/ptc/error-scaled</input>
-            <input>fcs/ptc/cas-interconnect</input>
-        </summer>
-
-        <!-- Trim integrator: c1=1.5, clip -2.0 to +5.5 deg -->
-        <integrator name="fcs/ptc/trim-integrator-deg">
-            <input>fcs/ptc/integrator-input</input>
-            <c1>cas/ptc-i-gain</c1>
-            <clipto>
-                <min>-2.0</min>
-                <max>5.5</max>
-            </clipto>
-        </integrator>
-
-        <!-- Combine baseline table + closed-loop correction -->
-        <summer name="fcs/ptc/total-compensation-deg">
-            <input>fcs/pitch-trim-compensation</input>
-            <input>fcs/ptc/trim-integrator-deg</input>
-        </summer>
-
-        <!-- Normalize PTC output to stabilator travel (-26 to +15 deg) -->
-        <fcs_function name="fcs/ptc/output-norm">
-            <function>
-                <quotient>
-                    <property>fcs/ptc/total-compensation-deg</property>
-                    <value>26.0</value>
-                </quotient>
-            </function>
+        <pure_gain name="fcs/ptc/cas-interconnect">
+            <input>fcs/ptc/cas-interconnect-raw</input>
+            <gain>1.0</gain>
             <clipto>
                 <min>-1.0</min>
                 <max>1.0</max>
             </clipto>
-        </fcs_function>
-    </channel>
+        </pure_gain>
 
-    <!-- ================================================================== -->
-    <!-- Ch 5: ROLL CAS â€” Rate command system                               -->
-    <!-- ================================================================== -->
-    <channel name="Roll CAS">
-        <!-- Rate command: aileron_cmd * gain = commanded rate (deg/s) -->
-        <fcs_function name="fcs/roll-cas/rate-commanded-deg_sec">
+        <!-- Sum error + interconnect, gated by init ramp and PTC enable -->
+        <fcs_function name="fcs/ptc/integrator-input">
             <function>
                 <product>
-                    <property>fcs/aileron-cmd-scheduled</property>
-                    <value>180.0</value>
+                    <property>fcs/init-ramp</property>
+                    <property>fcs/ptc-enable</property>
+                    <sum>
+                        <property>fcs/ptc/error-scaled</property>
+                        <property>fcs/ptc/cas-interconnect</property>
+                    </sum>
                 </product>
             </function>
         </fcs_function>
 
-        <!-- Sensed roll rate in deg/s -->
+        <!-- Trim integrator: c1=1.5.
+             Schematic limits: +5.5 (nose-up) / -2.0 (nose-down).
+             In JSBSim convention (negative=nose-up): -5.5 / +2.0 -->
+        <integrator name="fcs/ptc/trim-integrator-deg">
+            <input>fcs/ptc/integrator-input</input>
+            <c1>cas/ptc-i-gain</c1>
+            <clipto>
+                <min>-5.5</min>
+                <max>2.0</max>
+            </clipto>
+        </integrator>
+
+        <!-- Mechanical stick path per schematic (fcs-ptc.png):
+             STICK (in) through PITCH RATIO ADJUST DEVICE then (STICK + 0.5 bias) × 3.88 deg/in.
+             The +0.5 bias is a mechanical linkage offset providing ~1.94 deg of nose-down
+             at zero stick. The sign convention change (removing the (-) on the sum entry)
+             already inverts the stick-to-stab mapping; the bias direction is preserved
+             because both inversions cancel. -->
+        <fcs_function name="fcs/ptc/mechanical-stick-deg">
+            <function>
+                <product>
+                    <sum>
+                        <property>fcs/pitch-stick-adjusted-in</property>
+                        <value>0.5</value>
+                    </sum>
+                    <value>3.88</value>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Combine baseline table + integrator + mechanical stick.
+             Schematic shows (-) sign on stick, but schematic uses opposite stab sign
+             convention (positive=TED=nose-up). In JSBSim, negative=nose-up, so the
+             mechanical stick enters with (+) to produce the correct deflection direction:
+             aft stick (negative in) → negative mech_stick → negative total_comp → nose UP.
+             Forward stick (positive in) → positive mech_stick → positive total_comp → nose DOWN. -->
+        <fcs_function name="fcs/ptc/total-compensation-deg">
+            <function>
+                <sum>
+                    <property>fcs/pitch-trim-compensation</property>
+                    <property>fcs/ptc/trim-integrator-deg</property>
+                    <property>fcs/ptc/mechanical-stick-deg</property>
+                </sum>
+            </function>
+        </fcs_function>
+
+        <!-- PTC total compensation is now used directly in degrees by the pitch mixer.
+             No normalization needed — degree-domain signal path. -->
+    </channel>
+
+    <!-- ================================================================== -->
+    <!-- Ch 5: ROLL CAS â€” Rate command system                               -->
+    <!-- Schematic: Docs/fcs-roll-cas.png  |  Docs/F-15-FCS.md              -->
+    <!-- ================================================================== -->
+    <channel name="Roll CAS">
+        <!-- Rate command: lateral stick (inches) × 54 deg/sec/in per schematic -->
+        <fcs_function name="fcs/roll-cas/rate-commanded-raw-deg_sec">
+            <function>
+                <product>
+                    <property>fcs/roll-stick-in</property>
+                    <value>54.0</value>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Command prefilter: 3.333/(S+3.333) on command path per schematic
+             (NOT on sensor path — moved from Ch1 sensor channel) -->
+        <lag_filter name="fcs/roll-cas/rate-commanded-deg_sec">
+            <input>fcs/roll-cas/rate-commanded-raw-deg_sec</input>
+            <c1>3.333</c1>
+        </lag_filter>
+
+        <!-- Sensed roll rate in deg/s: uses unfiltered rate per schematic -->
         <fcs_function name="fcs/roll-cas/rate-sensed-deg_sec">
             <function>
                 <product>
-                    <property>fcs/sensor/roll-rate-rad_sec</property>
+                    <property>velocities/p-aero-rad_sec</property>
                     <value>57.29578</value>
                 </product>
             </function>
         </fcs_function>
 
-        <!-- Rate error -->
+        <!-- Pitch-coupling crossfeed per schematic (fcs-roll-cas.png):
+             Architecture: PITCH RATE × 15.5 → washout 3S/(3S+1),
+             then sum with LOAD FACTOR + PITCH ACCEL (no washout on these),
+             then lead-lag (S/10+1)/(S/30+1).
+             Note: the Nz component passes through at DC, providing a constant
+             crossfeed at 1g. This compensates for real F-15 pitch-roll aero coupling.
+             The crossfeed gain is tunable — set to 0 until aero coupling is validated. -->
+        <fcs_function name="fcs/roll-cas/crossfeed-pitch-rate">
+            <function>
+                <product>
+                    <property>velocities/q-aero-rad_sec</property>
+                    <value>15.5</value>
+                </product>
+            </function>
+        </fcs_function>
+
+        <washout_filter name="fcs/roll-cas/crossfeed-pitch-rate-washed">
+            <input>fcs/roll-cas/crossfeed-pitch-rate</input>
+            <c1>3.0</c1>
+        </washout_filter>
+
+        <summer name="fcs/roll-cas/crossfeed-sum">
+            <input>fcs/roll-cas/crossfeed-pitch-rate-washed</input>
+            <input>fcs/sensor/nz-g</input>
+            <input>accelerations/qdot-rad_sec2</input>
+        </summer>
+
+        <lead_lag_filter name="fcs/roll-cas/pitch-crossfeed-filtered">
+            <input>fcs/roll-cas/crossfeed-sum</input>
+            <c1>0.1</c1>
+            <c2>1</c2>
+            <c3>0.033</c3>
+            <c4>1</c4>
+        </lead_lag_filter>
+
+        <!-- Tunable crossfeed gain: 0 = disabled, 1.0 = full schematic value.
+             Set to 0 until pitch-roll aero coupling is validated. -->
+        <pure_gain name="fcs/roll-cas/pitch-crossfeed-deg">
+            <input>fcs/roll-cas/pitch-crossfeed-filtered</input>
+            <gain>cas/roll-cas-crossfeed-gain</gain>
+        </pure_gain>
+
+        <!-- Rate error with pitch coupling crossfeed -->
         <summer name="fcs/roll-cas/rate-error-deg_sec">
             <input>fcs/roll-cas/rate-commanded-deg_sec</input>
             <input>-fcs/roll-cas/rate-sensed-deg_sec</input>
+            <input>fcs/roll-cas/pitch-crossfeed-deg</input>
         </summer>
 
         <!-- Error gain -->
@@ -556,62 +856,102 @@
             <gain>0.0625</gain>
         </pure_gain>
 
-        <!-- AOA authority schedule: peaks 2.5 at 0-5deg, fades above 20deg -->
+        <!-- Roll CAS Limit Schedule (10) per schematic (fcs-roll-cas.png):
+             2D LIMIT schedule f(AOA, mean_stab_defl).
+             Provides the variable authority limit (±deg) for the roll CAS output.
+             The schematic labels this "ROLL CAS LIMIT SCHEDULE" — it limits,
+             not multiplies, the CAS output.
+             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (10) data -->
         <fcs_function name="fcs/roll-cas/aoa-authority">
             <function>
                 <table>
                     <independentVar lookup="row">fcs/sensor/aoa-deg</independentVar>
+                    <independentVar lookup="column">fcs/elevator-pos-deg</independentVar>
                     <tableData>
-                        -5   1.5
-                         0   2.5
-                         5   2.5
-                        15   2.0
-                        20   1.0
-                        30   0.2
+                                 -20     -10       0      10
+                        -5       3.0     4.0     5.0     3.0
+                         0       3.0     4.0     5.0     3.0
+                         5       3.0     4.0     5.0     3.0
+                        15       2.0     3.0     4.0     2.0
+                        20       1.0     2.0     2.0     1.0
+                        30       0.5     0.5     0.5     0.5
                     </tableData>
                 </table>
             </function>
         </fcs_function>
 
-        <!-- Apply AOA authority -->
-        <fcs_function name="fcs/roll-cas/authority-applied-deg">
-            <function>
-                <product>
-                    <property>fcs/roll-cas/error-gain-deg</property>
-                    <property>fcs/roll-cas/aoa-authority</property>
-                </product>
-            </function>
+        <!-- Apply variable authority limit from schedule (10) -->
+        <pure_gain name="fcs/roll-cas/authority-applied-deg">
+            <input>fcs/roll-cas/error-gain-deg</input>
+            <gain>1.0</gain>
             <clipto>
-                <min>-5.0</min>
-                <max>5.0</max>
+                <min>-fcs/roll-cas/aoa-authority</min>
+                <max>fcs/roll-cas/aoa-authority</max>
             </clipto>
-        </fcs_function>
+        </pure_gain>
 
         <!-- CAS enable gate -->
-        <switch name="fcs/roll-cas/output-deg">
+        <switch name="fcs/roll-cas/output-deg-raw">
             <default value="0"/>
             <test logic="AND" value="fcs/roll-cas/authority-applied-deg">
-                fcs/cas-roll-enable ne 0
+                fcs/roll-cas-active ne 0
                 fcs/departure-cas-shutdown eq 0
             </test>
         </switch>
 
-        <!-- Normalize CAS output from degrees to aileron normalized travel.
-             Aileron range is +-20 deg, so 1 normalized unit = 20 deg. -->
-        <pure_gain name="fcs/roll-cas/output-norm">
-            <input>fcs/roll-cas/output-deg</input>
-            <gain>0.05</gain>  <!-- 1/20 -->
-        </pure_gain>
+        <!-- Apply init ramp -->
+        <fcs_function name="fcs/roll-cas/output-deg">
+            <function>
+                <product>
+                    <property>fcs/roll-cas/output-deg-raw</property>
+                    <property>fcs/init-ramp</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Roll CAS output is now used directly in degrees by the diff-stab actuator.
+             No normalization needed — degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 6: YAW CAS â€” PI controller + notch filter + crossfeed           -->
+    <!-- Ch 6: YAW CAS â€” Accel + rate + crossfeed per AEDC-TR-80-60         -->
+    <!-- Schematic: Docs/fcs-yaw-cas.png  |  Docs/F-15-FCS.md              -->
     <!-- ================================================================== -->
     <channel name="Yaw CAS">
-        <!-- Structural notch filter: (s^2+17.6s+484)/(s^2+44s+484)
-             This is a second_order_filter in JSBSim -->
-        <second_order_filter name="fcs/yaw-cas/notch-rad_sec">
+        <!-- Yaw CAS per AEDC-TR-80-60 schematic (Docs/fcs-yaw-cas.png):
+             Bottom path: yaw_accel×22 + yaw_rate_highpass → sum → ×0.005 → structural filter
+             Middle path: AOA crossfeed (pitch_rate × lateral_acc → schedule 13 → washout)
+             Both paths sum → ×(180/π) → PI controller (limit ±3.75, integrator 0.5/S) → limit ±15
+        -->
+
+        <!-- Yaw acceleration path: ×22 per schematic -->
+        <pure_gain name="fcs/yaw-cas/accel-gained">
+            <input>fcs/sensor/yaw-accel-rad_sec2</input>
+            <gain>cas/yaw-cas-acceleration-gain</gain>
+        </pure_gain>
+
+        <!-- Yaw rate high-pass: 2S/(2S+1), c1=0.5 per schematic -->
+        <washout_filter name="fcs/yaw-cas/rate-highpass-rad_sec">
             <input>fcs/sensor/yaw-rate-rad_sec</input>
+            <c1>0.5</c1>
+        </washout_filter>
+
+        <!-- Sum accel×22 + rate highpass per schematic -->
+        <summer name="fcs/yaw-cas/accel-rate-sum">
+            <input>fcs/yaw-cas/accel-gained</input>
+            <input>fcs/yaw-cas/rate-highpass-rad_sec</input>
+        </summer>
+
+        <!-- ×0.005 feedback gain per schematic -->
+        <pure_gain name="fcs/yaw-cas/accel-rate-gained">
+            <input>fcs/yaw-cas/accel-rate-sum</input>
+            <gain>cas/yaw-cas-feedback-gain</gain>
+        </pure_gain>
+
+        <!-- Structural notch filter: [(S/22)^2+2(0.4)(S/22)+1]/[(S/22)^2+2(S/22)+1]
+             per schematic -->
+        <second_order_filter name="fcs/yaw-cas/structural-filter">
+            <input>fcs/yaw-cas/accel-rate-gained</input>
             <c1>1</c1>
             <c2>17.6</c2>
             <c3>484</c3>
@@ -620,80 +960,122 @@
             <c6>484</c6>
         </second_order_filter>
 
-        <!-- Rate washout: 2s/(2s+1), c1=0.5 -->
-        <washout_filter name="fcs/yaw-cas/rate-washout-rad_sec">
-            <input>fcs/yaw-cas/notch-rad_sec</input>
-            <c1>0.5</c1>
-        </washout_filter>
+        <!-- Roll-yaw crossfeed per schematic:
+             PITCH_RATE × LATERAL_ACC → schedule(13) → washout S/(S+1)
+             Enters pre-PI summer with (-) sign -->
+        <fcs_function name="fcs/yaw-cas/crossfeed-product">
+            <function>
+                <product>
+                    <property>velocities/q-aero-rad_sec</property>
+                    <property>accelerations/vdot-ft_sec2</property>
+                </product>
+            </function>
+        </fcs_function>
 
-        <!-- Feedback gain -->
-        <pure_gain name="fcs/yaw-cas/rate-feedback">
-            <input>fcs/yaw-cas/rate-washout-rad_sec</input>
-            <gain>cas/yaw-cas-feedback-gain</gain>
-        </pure_gain>
+        <!-- Crossfeed Schedule (13): estimated — needs AEDC data -->
+        <fcs_function name="fcs/yaw-cas/crossfeed-scheduled">
+            <function>
+                <table>
+                    <independentVar lookup="row">fcs/yaw-cas/crossfeed-product</independentVar>
+                    <tableData>
+                        -50    -0.5
+                        -10    -0.1
+                          0     0.0
+                         10     0.1
+                         50     0.5
+                    </tableData>
+                </table>
+            </function>
+        </fcs_function>
 
-        <!-- AOA crossfeed: aoa_prefiltered -> washout s/(s+1) -> gain -->
-        <washout_filter name="fcs/yaw-cas/aoa-crossfeed-washout">
-            <input>fcs/sensor/aoa-deg</input>
+        <!-- Crossfeed washout: S/(S+1) per schematic -->
+        <washout_filter name="fcs/yaw-cas/crossfeed-washout">
+            <input>fcs/yaw-cas/crossfeed-scheduled</input>
             <c1>1.0</c1>
         </washout_filter>
 
-        <pure_gain name="fcs/yaw-cas/aoa-crossfeed">
-            <input>fcs/yaw-cas/aoa-crossfeed-washout</input>
-            <gain>cas/yaw-cas-crossfeed-gain</gain>
-        </pure_gain>
-
-        <!-- Feedback sum: rate + crossfeed, clip +-3.75 -->
-        <summer name="fcs/yaw-cas/feedback-sum-deg">
-            <input>fcs/yaw-cas/rate-feedback</input>
-            <input>fcs/yaw-cas/aoa-crossfeed</input>
+        <!-- Feedback sum per schematic: structural_filter - crossfeed - AOA_prefilter,
+             then ×(180/π), clip ±3.75 -->
+        <fcs_function name="fcs/yaw-cas/feedback-sum-deg">
+            <function>
+                <product>
+                    <sum>
+                        <property>fcs/yaw-cas/structural-filter</property>
+                        <product>
+                            <value>-1.0</value>
+                            <property>fcs/yaw-cas/crossfeed-washout</property>
+                        </product>
+                        <product>
+                            <value>-1.0</value>
+                            <property>fcs/sensor/aoa-deg</property>
+                            <value>0.017453</value>
+                        </product>
+                    </sum>
+                    <value>57.29578</value>
+                </product>
+            </function>
             <clipto>
                 <min>-3.75</min>
                 <max>3.75</max>
             </clipto>
-        </summer>
+        </fcs_function>
 
-        <!-- Proportional path: gain=22 -->
-        <pure_gain name="fcs/yaw-cas/proportional-deg">
-            <input>fcs/yaw-cas/feedback-sum-deg</input>
-            <gain>cas/yaw-cas-acceleration-gain</gain>
+        <!-- Diagnostic: individual feedback paths for CSV -->
+        <pure_gain name="fcs/yaw-cas/accel-feedback">
+            <input>fcs/yaw-cas/accel-rate-gained</input>
+            <gain>57.29578</gain>
         </pure_gain>
 
-        <!-- Integrator: c1=0.5, clip +-5 -->
+        <fcs_function name="fcs/yaw-cas/rate-feedback">
+            <function>
+                <product>
+                    <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
+                    <property>cas/yaw-cas-feedback-gain</property>
+                    <value>57.29578</value>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Integrator: 0.5/S, clip ±3.75 per schematic -->
         <integrator name="fcs/yaw-cas/integrator-deg">
             <input>fcs/yaw-cas/feedback-sum-deg</input>
             <c1>0.5</c1>
             <clipto>
-                <min>-5</min>
-                <max>5</max>
+                <min>-3.75</min>
+                <max>3.75</max>
             </clipto>
         </integrator>
 
-        <!-- PI sum -->
+        <!-- PI sum: proportional (feedback-sum) + integral -->
         <summer name="fcs/yaw-cas/pi-sum-deg">
-            <input>fcs/yaw-cas/proportional-deg</input>
+            <input>fcs/yaw-cas/feedback-sum-deg</input>
             <input>fcs/yaw-cas/integrator-deg</input>
             <clipto>
-                <min>-5</min>
-                <max>5</max>
+                <min>-15</min>
+                <max>15</max>
             </clipto>
         </summer>
 
-        <!-- CAS enable gate -->
-        <switch name="fcs/yaw-cas/output-deg">
+        <!-- CAS enable gate, gated by init ramp -->
+        <switch name="fcs/yaw-cas/output-deg-raw">
             <default value="0"/>
             <test logic="AND" value="fcs/yaw-cas/pi-sum-deg">
-                fcs/cas-yaw-enable ne 0
+                fcs/yaw-damper-active ne 0
                 fcs/departure-cas-shutdown eq 0
             </test>
         </switch>
 
-        <!-- Normalize CAS output from degrees to rudder normalized travel.
-             Rudder range is +-30 deg, so 1 normalized unit = 30 deg. -->
-        <pure_gain name="fcs/yaw-cas/output-norm">
-            <input>fcs/yaw-cas/output-deg</input>
-            <gain>0.03333</gain>  <!-- 1/30 -->
-        </pure_gain>
+        <fcs_function name="fcs/yaw-cas/output-deg">
+            <function>
+                <product>
+                    <property>fcs/yaw-cas/output-deg-raw</property>
+                    <property>fcs/init-ramp</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Yaw CAS output is now used directly in degrees by the yaw mixer.
+             No normalization needed — degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
@@ -759,22 +1141,29 @@
 
     <!-- ================================================================== -->
     <!-- Ch 8: ARI â€” Dual mechanical/CAS with asymmetric gradients          -->
+    <!-- Schematic: Docs/fcs-ari.png  |  Docs/F-15-FCS.md                   -->
     <!-- Proverse (back-stick) = 0.55 deg rud/deg ail                       -->
     <!-- Adverse (forward-stick) = 0.85 deg rud/deg ail                     -->
     <!-- ================================================================== -->
     <channel name="ARI">
-        <!-- Mechanical ARI: always active, disabled M>1.0 and on ground -->
-        <fcs_function name="fcs/ari/mechanical-demand-norm">
-            <description>
-                Mechanical ARI: rudder from lateral stick via stabilator position.
-                Proverse gradient 0.55, adverse gradient 0.85.
-                ref: NASA TM-72861 Figure 23, MCAIR Eagle Talk
-            </description>
+        <!-- Mechanical ARI per schematic (fcs-ari.png, fcs-lateral-roll.png):
+             signal → 12/(S+12) → × HORIZ_STAB_COMMAND → LIMIT +7.5/-15 → × 0.625 -->
+
+        <!-- Dynamic filter 12/(S+12) on ARI input -->
+        <lag_filter name="fcs/ari/mechanical-filtered">
+            <input>fcs/aileron-cmd-scheduled</input>
+            <c1>12</c1>
+        </lag_filter>
+
+        <!-- Mechanical ARI: rudder from lateral stick via stabilator position.
+             Proverse gradient 0.55, adverse gradient 0.85.
+             ref: NASA TM-72861 Figure 23, MCAIR Eagle Talk -->
+        <fcs_function name="fcs/ari/mechanical-demand-raw-norm">
             <function>
                 <product>
-                    <property>fcs/aileron-cmd-scheduled</property>
+                    <property>fcs/ari/mechanical-filtered</property>
                     <table>
-                        <independentVar lookup="row">fcs/elevator-pos-deg</independentVar>
+                        <independentVar lookup="row">fcs/roll-ratio/filtered-stab-deg</independentVar>
                         <independentVar lookup="column">fcs/flap-pos-deg</independentVar>
                         <tableData>
                                       0       30
@@ -785,15 +1174,31 @@
                     </table>
                 </product>
             </function>
-            <clipto>
-                <min>-1.0</min>
-                <max>1.0</max>
-            </clipto>
+        </fcs_function>
+
+        <!-- Asymmetric limit per schematic: +7.5/-15 deg, then × 0.625 gain.
+             Convert to degrees: raw-norm × 30 → degrees, then limit and gain -->
+        <fcs_function name="fcs/ari/mechanical-demand-deg">
+            <function>
+                <product>
+                    <min>
+                        <value>7.5</value>
+                        <max>
+                            <value>-15.0</value>
+                            <product>
+                                <property>fcs/ari/mechanical-demand-raw-norm</property>
+                                <value>30.0</value>
+                            </product>
+                        </max>
+                    </min>
+                    <value>0.625</value>
+                </product>
+            </function>
         </fcs_function>
 
         <!-- Mechanical ARI gate: off at M>1.0 or on ground -->
-        <switch name="fcs/ari/mechanical-output-norm">
-            <default value="fcs/ari/mechanical-demand-norm"/>
+        <switch name="fcs/ari/mechanical-output-deg">
+            <default value="fcs/ari/mechanical-demand-deg"/>
             <test value="0">
                 velocities/mach ge 1.0
             </test>
@@ -802,35 +1207,62 @@
             </test>
         </switch>
 
-        <!-- CAS ARI: active when CAS yaw is on, biased to 10deg AOA reference -->
-        <fcs_function name="fcs/ari/cas-demand-norm">
-            <description>CAS ARI: operates at all speeds, biased to 10deg AOA reference</description>
+        <!-- CAS ARI: scheduled by roll rate as a function of AOA.
+             Per Garrison: "CAS ARI does essentially the same job as the hydro-
+             mechanical ARI except that it is scheduled by roll rate as a function
+             of angle of attack. It can operate subsonically or supersonically."
+             Roll rate factor: ramps from 0 at low rates to 1.0 at high rates,
+             so CAS ARI activates proportionally during rolling maneuvers. -->
+        <!-- CAS ARI roll rate scaling: ramp from 0 at 2 deg/s to 1.0 at 30 deg/s.
+             The previous 10 deg/s dead zone left no rudder coordination during
+             roll initiation, allowing adverse yaw to build beta unchecked.
+             Per Garrison: CAS ARI "operates at all speeds" — it should engage
+             early in the roll, not wait for high roll rates. -->
+        <fcs_function name="fcs/ari/roll-rate-factor">
+            <description>CAS ARI roll rate scaling: |p| ramps 0→1 over 2-30 deg/s</description>
+            <function>
+                <table>
+                    <independentVar lookup="row">fcs/sensor/roll-rate-filtered-rad_sec</independentVar>
+                    <tableData>
+                        -0.5236   1.0
+                        -0.0349   0.0
+                         0.0      0.0
+                         0.0349   0.0
+                         0.5236   1.0
+                    </tableData>
+                </table>
+            </function>
+        </fcs_function>
+
+        <fcs_function name="fcs/ari/cas-demand-deg">
+            <description>CAS ARI: AOA schedule × roll rate factor, in degrees (×30)</description>
             <function>
                 <product>
                     <property>fcs/aileron-cmd-scheduled</property>
+                    <property>fcs/ari/roll-rate-factor</property>
                     <table>
                         <independentVar lookup="row">fcs/sensor/aoa-deg</independentVar>
                         <tableData>
-                            -5   -0.85
-                             0   -0.85
-                            10    0.00
-                            20    0.55
-                            30    0.55
+                            -5   -25.5
+                             0   -25.5
+                            10     0.0
+                            20    16.5
+                            30    16.5
                         </tableData>
                     </table>
                 </product>
             </function>
             <clipto>
-                <min>-0.50</min>
-                <max>0.25</max>
+                <min>-15.0</min>
+                <max>7.5</max>
             </clipto>
         </fcs_function>
 
         <!-- CAS ARI gate: only active when yaw CAS is on -->
-        <switch name="fcs/ari/cas-output-norm">
+        <switch name="fcs/ari/cas-output-deg">
             <default value="0"/>
-            <test logic="AND" value="fcs/ari/cas-demand-norm">
-                fcs/cas-yaw-enable ne 0
+            <test logic="AND" value="fcs/ari/cas-demand-deg">
+                fcs/yaw-damper-active ne 0
                 fcs/departure-cas-shutdown eq 0
             </test>
         </switch>
@@ -841,44 +1273,53 @@
     <!-- Active above ~20-25deg AOA, provides nose-down pitch command       -->
     <!-- ================================================================== -->
     <channel name="Stall Inhibitor">
-        <!-- Pitch rate scaled by 0.55, rad->deg, * 0.2 -->
-        <fcs_function name="fcs/stall-inhibitor/raw-norm">
-            <function>
-                <product>
-                    <property>velocities/q-aero-rad_sec</property>
-                    <value>0.55</value>
-                    <value>57.29578</value>
-                    <value>0.2</value>
-                </product>
-            </function>
-        </fcs_function>
+        <!-- Stall Inhibitor Schedule (4) per schematic (fcs-pitch-cas.png):
+             PITCH RATE × 180/π → WASHOUT 0.5S/(0.5S+1) → sum with AOA → schedule (4)
+             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (4) data -->
 
-        <!-- AOA gate: active above 20-25deg AOA -->
-        <fcs_function name="fcs/stall-inhibitor/aoa-gate">
+        <!-- Pitch rate in deg/s -->
+        <pure_gain name="fcs/stall-inhibitor/pitch-rate-deg_sec">
+            <input>velocities/q-aero-rad_sec</input>
+            <gain>57.29578</gain>
+        </pure_gain>
+
+        <!-- Washout 0.5S/(0.5S+1) → c1 = 1/0.5 = 2.0 -->
+        <washout_filter name="fcs/stall-inhibitor/pitch-rate-washout">
+            <input>fcs/stall-inhibitor/pitch-rate-deg_sec</input>
+            <c1>2.0</c1>
+        </washout_filter>
+
+        <!-- Schedule (4): 2D table f(AOA, washed_pitch_rate)
+             Active only at high AOA. Provides nose-down command. -->
+        <fcs_function name="fcs/stall-inhibitor/raw-norm">
             <function>
                 <table>
                     <independentVar lookup="row">fcs/sensor/aoa-deg</independentVar>
+                    <independentVar lookup="column">fcs/stall-inhibitor/pitch-rate-washout</independentVar>
                     <tableData>
-                        18   0.0
-                        20   0.0
-                        25   1.0
-                        40   1.0
+                                  -30      -10        0       10       30
+                        10       0.00     0.00     0.00     0.00     0.00
+                        20       0.00     0.00     0.00     0.00     0.00
+                        25      -0.10    -0.03     0.00    -0.03    -0.10
+                        30      -0.25    -0.08     0.00    -0.08    -0.25
+                        40      -0.50    -0.15     0.00    -0.15    -0.50
                     </tableData>
                 </table>
-            </function>
-        </fcs_function>
-
-        <fcs_function name="fcs/stall-inhibitor/output-norm">
-            <function>
-                <product>
-                    <property>fcs/stall-inhibitor/raw-norm</property>
-                    <property>fcs/stall-inhibitor/aoa-gate</property>
-                </product>
             </function>
             <clipto>
                 <min>-0.5</min>
                 <max>0.0</max>
             </clipto>
+        </fcs_function>
+
+        <!-- Stall inhibitor output in degrees (scale raw-norm by stab half-range) -->
+        <fcs_function name="fcs/stall-inhibitor/output-deg">
+            <function>
+                <product>
+                    <property>fcs/stall-inhibitor/raw-norm</property>
+                    <value>20.5</value>
+                </product>
+            </function>
         </fcs_function>
     </channel>
 
@@ -887,49 +1328,64 @@
     <!-- ================================================================== -->
     <channel name="Mixing">
         <!-- ============================================================ -->
-        <!-- Pitch mixing: stick + CAS + PTC + AFCS + stall inhibitor     -->
+        <!-- Pitch mixing in DEGREES per schematic (fcs-stab-actuators.png):
+             HORIZ STAB COMMAND is the primary stabilator command from PTC.
+             CAS series servo adds ±2.5 deg (±10 deg physical range).
+             No separate direct stick — stick goes through PTC mechanical path.
+             Stab range: +15 TEU / -26 TED                                  -->
         <!-- ============================================================ -->
-        <summer name="fcs/pitch-mix/sum-norm">
-            <input>fcs/pitch-stick-adjusted</input>
-            <input>fcs/pitch-cas/output-norm</input>
-            <input>fcs/ptc/output-norm</input>
-            <input>systems/afcs/elevator-cmd-delta</input>
-            <input>fcs/stall-inhibitor/output-norm</input>
+        <summer name="fcs/pitch-mix/sum-deg">
+            <input>fcs/ptc/total-compensation-deg</input>
+            <input>fcs/pitch-cas/output-deg</input>
+            <input>fcs/stall-inhibitor/output-deg</input>
             <clipto>
-                <min>-1</min>
-                <max>1</max>
+                <min>-26</min>
+                <max>15</max>
             </clipto>
         </summer>
 
         <!-- Apply pitch departure authority factor -->
-        <fcs_function name="fcs/pitch-mix/output-norm">
+        <fcs_function name="fcs/pitch-mix/output-deg">
             <function>
                 <product>
-                    <property>fcs/pitch-mix/sum-norm</property>
+                    <property>fcs/pitch-mix/sum-deg</property>
                     <property>fcs/departure/pitch-authority-factor</property>
                 </product>
             </function>
         </fcs_function>
 
         <!-- ============================================================ -->
-        <!-- Roll mixing: stick + CAS, apply departure aileron washout    -->
+        <!-- Roll mixing: separate aileron (mechanical only) and diff-stab -->
+        <!-- (mechanical + CAS) paths.                                     -->
+        <!-- Per Garrison: "The roll CAS attempts to satisfy the command   -->
+        <!-- through the series CAS authority of the differential          -->
+        <!-- stabilator (no CAS series authority on ailerons)"             -->
+        <!-- The 0.3 deg diff-stab per deg aileron coupling is the         -->
+        <!-- MECHANICAL gearing. CAS series servo acts directly on the     -->
+        <!-- stabilator actuator, bypassing the 0.3 coupling.             -->
         <!-- ============================================================ -->
-        <summer name="fcs/roll-mix/sum-raw-norm">
-            <input>fcs/aileron-cmd-scheduled</input>
-            <input>fcs/roll-cas/output-norm</input>
-            <clipto>
-                <min>-1</min>
-                <max>1</max>
-            </clipto>
-        </summer>
 
-        <!-- Apply roll ratio -->
-        <pure_gain name="fcs/roll-mix/ratio-applied-norm">
-            <input>fcs/roll-mix/sum-raw-norm</input>
+        <!-- Aileron path: mechanical only, no CAS -->
+        <pure_gain name="fcs/roll-mix/aileron-ratio-applied-norm">
+            <input>fcs/aileron-cmd-scheduled</input>
             <gain>fcs/roll-ratio</gain>
         </pure_gain>
 
-        <!-- Apply departure aileron washout -->
+        <fcs_function name="fcs/roll-mix/aileron-output-norm">
+            <function>
+                <product>
+                    <property>fcs/roll-mix/aileron-ratio-applied-norm</property>
+                    <property>fcs/departure/aileron-washout-factor</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Mechanical roll path (for diff stab via 0.3 coupling in output scaling) -->
+        <pure_gain name="fcs/roll-mix/ratio-applied-norm">
+            <input>fcs/aileron-cmd-scheduled</input>
+            <gain>fcs/roll-ratio</gain>
+        </pure_gain>
+
         <fcs_function name="fcs/roll-mix/output-norm">
             <function>
                 <product>
@@ -943,67 +1399,79 @@
         <!-- Yaw mixing: pedals + ARI + CAS + yaw trim                   -->
         <!-- ============================================================ -->
 
-        <!-- Pilot pedal authority: +-15deg (M<1.5), +-5deg (M>1.5) -->
-        <fcs_function name="fcs/yaw-mix/pedal-authority">
-            <function>
-                <table>
-                    <independentVar lookup="row">velocities/mach</independentVar>
-                    <tableData>
-                        0.0   1.0
-                        1.3   1.0
-                        1.5   0.333
-                        2.5   0.333
-                    </tableData>
-                </table>
-            </function>
-        </fcs_function>
-
-        <!-- Pedal command with authority and effectivity -->
-        <fcs_function name="fcs/yaw-mix/pedal-cmd-norm">
+        <!-- Pedal command in degrees: ±15 deg subsonic, ±5 deg supersonic.
+             Ref: Garrison Eagle Talk, TO 1F-15A-1 -->
+        <fcs_function name="fcs/yaw-mix/pedal-cmd-deg">
             <function>
                 <product>
                     <sum>
                         <property>fcs/rudder-cmd-norm</property>
                         <property>fcs/yaw-trim-cmd-norm</property>
                     </sum>
-                    <property>fcs/yaw-mix/pedal-authority</property>
                     <property>fcs/rudder-effectivity</property>
+                    <table>
+                        <independentVar lookup="row">velocities/mach</independentVar>
+                        <tableData>
+                            0.0   15.0
+                            1.3   15.0
+                            1.5    5.0
+                            2.5    5.0
+                        </tableData>
+                    </table>
                 </product>
             </function>
             <clipto>
-                <min>-1.0</min>
-                <max>1.0</max>
+                <min>-30</min>
+                <max>30</max>
             </clipto>
         </fcs_function>
 
-        <!-- Sum all yaw contributions -->
-        <summer name="fcs/yaw-mix/output-norm">
-            <input>fcs/yaw-mix/pedal-cmd-norm</input>
-            <input>fcs/ari/mechanical-output-norm</input>
-            <input>fcs/ari/cas-output-norm</input>
-            <input>fcs/yaw-cas/output-norm</input>
+        <!-- Sum all yaw contributions in degrees -->
+        <summer name="fcs/yaw-mix/output-deg">
+            <input>fcs/yaw-mix/pedal-cmd-deg</input>
+            <input>fcs/ari/mechanical-output-deg</input>
+            <input>fcs/ari/cas-output-deg</input>
+            <input>fcs/yaw-cas/output-deg</input>
             <clipto>
-                <min>-1.1</min>
-                <max>1.1</max>
+                <min>-30</min>
+                <max>30</max>
             </clipto>
         </summer>
     </channel>
 
     <!-- ================================================================== -->
     <!-- Ch 11: ACTUATORS â€” lag_filter 20/(s+20) with hydraulic gating     -->
+    <!-- Schematic: Docs/fcs-stab-actuators.png  |  Docs/F-15-FCS.md       -->
     <!-- tau=50ms, BW=3.18Hz â€” replaces kinematic elements                 -->
     <!-- ================================================================== -->
     <channel name="Actuators">
         <!-- Pitch actuator: hold last value on hydraulic failure -->
-        <switch name="fcs/actuator/pitch-input-norm">
-            <default value="fcs/pitch-mix/output-norm"/>
-            <test value="fcs/actuator/pitch-output-norm">
+        <switch name="fcs/actuator/pitch-input-deg">
+            <default value="fcs/pitch-mix/output-deg"/>
+            <test value="fcs/actuator/pitch-output-deg">
                 systems/hydraulics/flight-controls-pressure ne 1
             </test>
         </switch>
 
-        <lag_filter name="fcs/actuator/pitch-output-norm">
-            <input>fcs/actuator/pitch-input-norm</input>
+        <lag_filter name="fcs/actuator/pitch-output-deg">
+            <input>fcs/actuator/pitch-input-deg</input>
+            <c1>20</c1>
+            <clipto>
+                <min>-26</min>
+                <max>15</max>
+            </clipto>
+        </lag_filter>
+
+        <!-- Aileron actuator (mechanical only, no CAS) -->
+        <switch name="fcs/actuator/aileron-input-norm">
+            <default value="fcs/roll-mix/aileron-output-norm"/>
+            <test value="fcs/actuator/aileron-output-norm">
+                systems/hydraulics/flight-controls-pressure ne 1
+            </test>
+        </switch>
+
+        <lag_filter name="fcs/actuator/aileron-output-norm">
+            <input>fcs/actuator/aileron-input-norm</input>
             <c1>20</c1>
             <clipto>
                 <min>-1.0</min>
@@ -1011,7 +1479,28 @@
             </clipto>
         </lag_filter>
 
-        <!-- Roll actuator -->
+        <!-- Roll CAS series servo actuator (diff stab only, bypasses 0.3 coupling).
+             Per Garrison: "Roll command augmentation is provided through the
+             stabilator CAS series servos" — CAS series servo acts directly on
+             stabilator actuator, separate from the mechanical 0.3 deg coupling.
+             Ref: NASA TM-72861 appendix, Garrison Eagle Talk -->
+        <switch name="fcs/actuator/roll-cas-input-deg">
+            <default value="fcs/roll-cas/output-deg"/>
+            <test value="fcs/actuator/roll-cas-output-deg">
+                systems/hydraulics/flight-controls-pressure ne 1
+            </test>
+        </switch>
+
+        <lag_filter name="fcs/actuator/roll-cas-output-deg">
+            <input>fcs/actuator/roll-cas-input-deg</input>
+            <c1>20</c1>
+            <clipto>
+                <min>-10</min>
+                <max>10</max>
+            </clipto>
+        </lag_filter>
+
+        <!-- Mechanical roll actuator (for 0.3 coupling path to diff stab) -->
         <switch name="fcs/actuator/roll-input-norm">
             <default value="fcs/roll-mix/output-norm"/>
             <test value="fcs/actuator/roll-output-norm">
@@ -1029,73 +1518,82 @@
         </lag_filter>
 
         <!-- Yaw actuator -->
-        <switch name="fcs/actuator/yaw-input-norm">
-            <default value="fcs/yaw-mix/output-norm"/>
-            <test value="fcs/actuator/yaw-output-norm">
+        <switch name="fcs/actuator/yaw-input-deg">
+            <default value="fcs/yaw-mix/output-deg"/>
+            <test value="fcs/actuator/yaw-output-deg">
                 systems/hydraulics/flight-controls-pressure ne 1
             </test>
         </switch>
 
-        <lag_filter name="fcs/actuator/yaw-output-norm">
-            <input>fcs/actuator/yaw-input-norm</input>
+        <lag_filter name="fcs/actuator/yaw-output-deg">
+            <input>fcs/actuator/yaw-input-deg</input>
             <c1>20</c1>
             <clipto>
-                <min>-1.1</min>
-                <max>1.1</max>
+                <min>-30</min>
+                <max>30</max>
             </clipto>
         </lag_filter>
     </channel>
 
     <!-- ================================================================== -->
     <!-- Ch 12: OUTPUT SCALING â€” convert to rad/deg/norm, diff stabilator   -->
+    <!-- Schematic: Docs/fcs-lateral-roll.png, fcs-pitch-ratio.png          -->
     <!-- Stabilator: +15 deg TEU / -26 deg TED                             -->
     <!-- Aileron: +/-20 deg                                                 -->
     <!-- Rudder: +/-30 deg                                                  -->
     <!-- ================================================================== -->
     <channel name="Output Scaling">
         <!-- ============================================================ -->
-        <!-- Elevator/Stabilator output                                    -->
+        <!-- Elevator/Stabilator output — degree-domain actuator output    -->
         <!-- ============================================================ -->
-        <aerosurface_scale name="fcs/elevator-pos-rad">
-            <input>fcs/actuator/pitch-output-norm</input>
-            <range>
-                <min>-0.45379</min>  <!-- -26 deg in rad -->
-                <max>0.26180</max>   <!-- +15 deg in rad -->
-            </range>
-            <output>fcs/elevator-pos-rad</output>
-        </aerosurface_scale>
 
-        <fcs_function name="fcs/elevator-pos-deg">
+        <!-- Elevator position in degrees (direct from actuator) -->
+        <pure_gain name="fcs/elevator-pos-deg">
+            <input>fcs/actuator/pitch-output-deg</input>
+            <gain>1.0</gain>
+        </pure_gain>
+
+        <!-- Convert to radians for aero model -->
+        <fcs_function name="fcs/elevator-pos-rad">
             <function>
                 <product>
-                    <property>fcs/elevator-pos-rad</property>
-                    <value>57.29578</value>
+                    <property>fcs/actuator/pitch-output-deg</property>
+                    <value>0.017453</value>
                 </product>
             </function>
+            <output>fcs/elevator-pos-rad</output>
         </fcs_function>
 
-        <!-- Elevator normalized: -1 at -26deg, +1 at +15deg -->
-        <aerosurface_scale name="fcs/elevator-pos-norm">
-            <input>fcs/elevator-pos-rad</input>
-            <domain>
-                <min>-0.45379</min>
-                <max>0.26180</max>
-            </domain>
-            <range>
-                <min>-1</min>
-                <max>1</max>
-            </range>
+        <!-- Elevator normalized: symmetric about 0, half-range 20.5 deg -->
+        <fcs_function name="fcs/elevator-pos-norm">
+            <function>
+                <quotient>
+                    <property>fcs/actuator/pitch-output-deg</property>
+                    <value>20.5</value>
+                </quotient>
+            </function>
             <output>fcs/elevator-pos-norm</output>
-        </aerosurface_scale>
+        </fcs_function>
 
-        <!-- Differential stabilator for roll control -->
-        <fcs_function name="fcs/differential-elevator-pos-norm">
+        <!-- Differential stabilator for roll control.
+             Two contributions:
+             1) Mechanical: aileron × roll_ratio × departure_washout × 0.3 × Vc/stab table
+                Ref: NASA TM-72861 "0.3 deg diff stab per deg aileron deflection"
+             2) Roll CAS series servo: acts directly on stabilator actuator, bypassing
+                the 0.3 mechanical coupling.
+                Ref: Garrison Eagle Talk "Roll command augmentation is provided through
+                the stabilator CAS series servos" (no CAS on ailerons) -->
+        <!-- Differential stabilator in degrees.
+             Two contributions summed:
+             1) Mechanical: roll_output_norm × 0.3 × Vc/stab schedule × 20.5 (to deg)
+             2) Roll CAS series servo: directly in degrees from actuator -->
+        <fcs_function name="fcs/diff-stab-total-deg">
             <description>
-                Differential stabilator: coupling factor 0.3 with Vc/stab schedule.
-                Plus 0.4deg gun weight asymmetry bias.
+                Differential stabilator: mechanical 0.3 coupling (converted to deg) + CAS series servo (deg).
             </description>
             <function>
                 <sum>
+                    <!-- Mechanical path: norm × 0.3 × Vc/stab schedule × 20.5 → degrees -->
                     <product>
                         <property>fcs/actuator/roll-output-norm</property>
                         <value>0.3</value>
@@ -1147,37 +1645,52 @@
                                 16 0.24 0.24 0.24 0.24 0.24 0.24 0.24
                             </tableData>
                         </table>
+                        <value>20.5</value>
                     </product>
-                    <!-- Gun weight asymmetry bias: 0.4deg normalized to stab travel -->
-                    <quotient>
-                        <property>fcs/gun-weight-stab-bias-deg</property>
-                        <value>26.0</value>
-                    </quotient>
+                    <!-- Roll CAS series servo: directly in degrees on stabilator.
+                         Ref: Garrison Eagle Talk, NASA TM-72861 appendix -->
+                    <property>fcs/actuator/roll-cas-output-deg</property>
                 </sum>
             </function>
         </fcs_function>
 
-        <summer name="fcs/elevator-left-pos-norm">
-            <input>fcs/elevator-pos-norm</input>
-            <input>fcs/differential-elevator-pos-norm</input>
+        <!-- Left/right stabilator: symmetric pitch + differential roll, in degrees -->
+        <summer name="fcs/elevator-left-pos-deg">
+            <input>fcs/actuator/pitch-output-deg</input>
+            <input>fcs/diff-stab-total-deg</input>
+            <clipto><min>-26</min><max>15</max></clipto>
         </summer>
 
-        <summer name="fcs/elevator-right-pos-norm">
-            <input>fcs/elevator-pos-norm</input>
-            <input>-fcs/differential-elevator-pos-norm</input>
+        <summer name="fcs/elevator-right-pos-deg">
+            <input>fcs/actuator/pitch-output-deg</input>
+            <input>-fcs/diff-stab-total-deg</input>
+            <clipto><min>-26</min><max>15</max></clipto>
         </summer>
 
-        <aerosurface_scale name="fcs/differential-elevator-pos-deg">
-            <input>fcs/differential-elevator-pos-norm</input>
-            <domain>
-                <min>-1</min>
-                <max>1</max>
-            </domain>
-            <range>
-                <min>-6.66667</min>
-                <max>6.66667</max>
-            </range>
-        </aerosurface_scale>
+        <!-- Normalize left/right for animation properties -->
+        <fcs_function name="fcs/elevator-left-pos-norm">
+            <function>
+                <quotient>
+                    <property>fcs/elevator-left-pos-deg</property>
+                    <value>20.5</value>
+                </quotient>
+            </function>
+        </fcs_function>
+
+        <fcs_function name="fcs/elevator-right-pos-norm">
+            <function>
+                <quotient>
+                    <property>fcs/elevator-right-pos-deg</property>
+                    <value>20.5</value>
+                </quotient>
+            </function>
+        </fcs_function>
+
+        <!-- Differential stabilator in degrees (for diagnostics) -->
+        <pure_gain name="fcs/differential-elevator-pos-deg">
+            <input>fcs/diff-stab-total-deg</input>
+            <gain>1.0</gain>
+        </pure_gain>
 
         <!-- Note: fcs/elevator-cmd-norm remains the pilot stick input property
              and is used by the hydraulic bleed calculation in f-15-hydraulic.xml -->
@@ -1186,7 +1699,7 @@
         <!-- Aileron output                                                -->
         <!-- ============================================================ -->
         <aerosurface_scale name="fcs/aileron-pos-rad">
-            <input>fcs/actuator/roll-output-norm</input>
+            <input>fcs/actuator/aileron-output-norm</input>
             <range>
                 <min>-0.34907</min>  <!-- -20 deg in rad -->
                 <max>0.34907</max>   <!-- +20 deg in rad -->
@@ -1195,7 +1708,7 @@
         </aerosurface_scale>
 
         <pure_gain name="fcs/aileron-pos-norm">
-            <input>fcs/actuator/roll-output-norm</input>
+            <input>fcs/actuator/aileron-output-norm</input>
             <gain>1</gain>
             <output>fcs/aileron-pos-norm</output>
         </pure_gain>
@@ -1266,21 +1779,21 @@
         </fcs_function>
 
         <!-- ============================================================ -->
-        <!-- Rudder output                                                 -->
+        <!-- Rudder output — degree-domain actuator output                 -->
         <!-- ============================================================ -->
-        <pure_gain name="fcs/rudder-pos-norm">
-            <input>fcs/actuator/yaw-output-norm</input>
-            <gain>1</gain>
-            <output>fcs/rudder-pos-norm</output>
+        <pure_gain name="fcs/rudder-pos-deg">
+            <input>fcs/actuator/yaw-output-deg</input>
+            <gain>1.0</gain>
         </pure_gain>
 
-        <fcs_function name="fcs/rudder-pos-deg">
+        <fcs_function name="fcs/rudder-pos-norm">
             <function>
-                <product>
-                    <property>fcs/rudder-pos-norm</property>
+                <quotient>
+                    <property>fcs/actuator/yaw-output-deg</property>
                     <value>30.0</value>
-                </product>
+                </quotient>
             </function>
+            <output>fcs/rudder-pos-norm</output>
         </fcs_function>
     </channel>
 

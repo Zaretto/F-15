@@ -1,0 +1,350 @@
+<?xml version="1.0"?>
+<!--
+    Diagnostic: Roll channel signal trace.
+    Logs ALL intermediate properties from stick input through to aileron output
+    to identify where the signal chain breaks.
+    Run with: TestPlane.exe test autotest/fcs/fcs-roll-channel-diagnostic.xml
+-->
+<runscript name="FCS - Roll channel diagnostic trace">
+  <description>
+    Full roll channel diagnostic. Starts engines in-air at 10k ft,
+    then applies a step aileron input and logs every intermediate property
+    in the roll signal chain at multiple time points.
+  </description>
+
+  <use aircraft="f15a" initialize="in-air"/>
+
+  <output name="autotest/output/fcs-roll-channel-diagnostic.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> velocities/vc-kts </property>
+    <property> aero/alpha-deg </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> systems/hydraulics/normal-pressure </property>
+    <property> systems/hydraulics/pc1-pump-psi </property>
+    <property> systems/hydraulics/pc1-psi </property>
+    <property> systems/hydraulics/pc1-pressure </property>
+    <property> systems/hydraulics/pc2-pump-psi </property>
+    <property> systems/hydraulics/pc2-psi </property>
+    <property> systems/hydraulics/pc2-pressure </property>
+    <property> systems/hydraulics/flight-controls-pressure </property>
+    <property> systems/hydraulics/util-left-pump-psi </property>
+    <property> systems/hydraulics/util-right-pump-psi </property>
+    <property> systems/hydraulics/util-psi </property>
+    <property> systems/hydraulics/util-pressure </property>
+    <property> propulsion/engine[0]/n2 </property>
+    <property> propulsion/engine[1]/n2 </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm-trimmed </property>
+    <property> fcs/aileron-cmd-scheduled </property>
+    <property> fcs/roll-ratio-dmd </property>
+    <property> fcs/roll-ratio </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/departure-cas-shutdown </property>
+    <property> fcs/roll-cas/rate-commanded-deg_sec </property>
+    <property> fcs/roll-cas/rate-sensed-deg_sec </property>
+    <property> fcs/roll-cas/rate-error-deg_sec </property>
+    <property> fcs/roll-cas/error-gain-deg </property>
+    <property> fcs/roll-cas/aoa-authority </property>
+    <property> fcs/roll-cas/authority-applied-deg </property>
+    <property> fcs/roll-cas/output-deg </property>
+    <property> fcs/roll-cas/output-norm </property>
+    <property> fcs/roll-mix/sum-raw-norm </property>
+    <property> fcs/roll-mix/ratio-applied-norm </property>
+    <property> fcs/departure/aileron-washout-factor </property>
+    <property> fcs/roll-mix/output-norm </property>
+    <property> fcs/actuator/roll-input-norm </property>
+    <property> fcs/actuator/roll-output-norm </property>
+    <property> fcs/aileron-pos-rad </property>
+    <property> fcs/aileron-pos-deg </property>
+    <property> fcs/aileron-pos-norm </property>
+    <property> fcs/diff-stab-total-deg </property>
+    <property> fcs/differential-elevator-pos-deg </property>
+    <property> velocities/p-aero-rad_sec </property>
+    <property> fcs/sensor/roll-rate-rad_sec </property>
+  </output>
+
+  <run start="0.0" end="8.0" dt="0.008333">
+
+    <!-- Initialize properties normally set by f15-common.xml (not loaded in test-fg) -->
+    <event name="Init properties from f15-common">
+      <condition> simulation/sim-time-sec ge 0.0 </condition>
+      <!-- Hydraulic system normal pressures -->
+      <set name="systems/hydraulics/normal-pressure" value="3000"/>
+      <set name="systems/hydraulics/util-left-normal-pressure" value="3000"/>
+      <set name="systems/hydraulics/util-right-normal-pressure" value="2775"/>
+      <!-- CAS gains -->
+      <set name="cas/pitch-cas-kq" value="15.5"/>
+      <set name="cas/ptc-i-gain" value="1.5"/>
+      <set name="cas/ptc-p-gain" value="0.267"/>
+      <set name="cas/ptc-stick-to-g" value="2.0"/>
+      <set name="cas/ptc-cas-interconnect-gain" value="0.15"/>
+      <set name="cas/ptc-nz-accelerometer-c1" value="102"/>
+      <set name="cas/yaw-cas-acceleration-gain" value="22"/>
+      <set name="cas/yaw-cas-feedback-gain" value="0.005"/>
+      <set name="cas/yaw-cas-crossfeed-gain" value="0.02"/>
+      <!-- FCS defaults (only properties declared by jsb-init.xml) -->
+      <set name="fcs/gun-weight-stab-bias-deg" value="0.4"/>
+      <notify>
+        <property caption="Hydraulic normal-pressure">systems/hydraulics/normal-pressure</property>
+      </notify>
+    </event>
+
+    <!-- Force engine N2 to idle every frame — propulsion model will decay this
+         but hydraulic pumps only need N2 > 18% for full output -->
+    <event name="Force engines running" persistent="true">
+      <condition> simulation/sim-time-sec ge 0.03 </condition>
+      <set name="propulsion/engine[0]/n2" value="65"/>
+      <set name="propulsion/engine[1]/n2" value="65"/>
+    </event>
+
+    <!-- Force hydraulic pressures directly — engines decay in test-fg mode
+         (no fuel/combustion) so N2 drops below pump threshold by ~t=2.5s.
+         These get overwritten by the hydraulic channel every 4th frame, but
+         the flight-controls channel sees the event value on the other 3 frames.
+         The actuator lag_filter still converges, just 25% slower. -->
+    <event name="Force hydraulic pressures" persistent="true">
+      <condition> simulation/sim-time-sec ge 0.03 </condition>
+      <set name="systems/hydraulics/pc1-psi" value="3000"/>
+      <set name="systems/hydraulics/pc2-psi" value="3000"/>
+      <set name="systems/hydraulics/pc1-pressure" value="1"/>
+      <set name="systems/hydraulics/pc2-pressure" value="1"/>
+      <set name="systems/hydraulics/flight-controls-pressure" value="1"/>
+      <set name="systems/hydraulics/util-psi" value="3000"/>
+      <set name="systems/hydraulics/util-pressure" value="1"/>
+    </event>
+
+    <!-- Enable CAS and log engine/hydraulic state -->
+    <event name="Enable CAS">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-roll-enable</property>
+        <property>propulsion/engine[0]/n2</property>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>systems/hydraulics/util-pressure</property>
+      </notify>
+    </event>
+
+    <!-- Log hydraulic detail at t=1.0 to verify pressurization -->
+    <event name="Hydraulic check at t=1.0">
+      <condition> simulation/sim-time-sec ge 1.0 </condition>
+      <notify>
+        <property caption="--- Hydraulic Detail ---">propulsion/engine[0]/n2</property>
+        <property>propulsion/engine[1]/n2</property>
+        <property>systems/hydraulics/normal-pressure</property>
+        <property>systems/hydraulics/pc1-pump-psi</property>
+        <property>systems/hydraulics/pc1-psi</property>
+        <property>systems/hydraulics/pc1-pressure</property>
+        <property>systems/hydraulics/pc2-pump-psi</property>
+        <property>systems/hydraulics/pc2-psi</property>
+        <property>systems/hydraulics/pc2-pressure</property>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>systems/hydraulics/util-left-pump-psi</property>
+        <property>systems/hydraulics/util-right-pump-psi</property>
+        <property>systems/hydraulics/util-psi</property>
+        <property>systems/hydraulics/util-pressure</property>
+        <check property="systems/hydraulics/pc1-psi" value="3000" tol_abs="100" message="PC1 hydraulic pressure at 3000 psi"/>
+        <check property="systems/hydraulics/pc2-psi" value="3000" tol_abs="100" message="PC2 hydraulic pressure at 3000 psi"/>
+        <check property="systems/hydraulics/flight-controls-pressure" value="1" message="Flight controls hydraulic pressure available"/>
+      </notify>
+    </event>
+
+    <!-- Baseline: verify flight state and zero-stick roll properties -->
+    <event name="BASELINE: zero stick state at t=2.0">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Hydraulic ---">systems/hydraulics/pc1-psi</property>
+        <property>systems/hydraulics/pc2-psi</property>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>systems/hydraulics/util-psi</property>
+        <property>systems/hydraulics/util-pressure</property>
+        <property caption="--- Roll Input ---">fcs/aileron-cmd-norm</property>
+        <property>fcs/aileron-cmd-norm-trimmed</property>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property caption="--- Roll Ratio ---">fcs/roll-ratio-dmd</property>
+        <property>fcs/roll-ratio</property>
+        <property caption="--- Roll CAS ---">fcs/cas-roll-enable</property>
+        <property>fcs/departure-cas-shutdown</property>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/rate-error-deg_sec</property>
+        <property>fcs/roll-cas/error-gain-deg</property>
+        <property>fcs/roll-cas/aoa-authority</property>
+        <property>fcs/roll-cas/authority-applied-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property caption="--- Roll Mixing ---">fcs/roll-mix/sum-raw-norm</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property caption="--- Actuator ---">fcs/actuator/roll-input-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property caption="--- Output ---">fcs/aileron-pos-rad</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/aileron-pos-norm</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property caption="--- Body Rates ---">velocities/p-aero-rad_sec</property>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+        <check property="fcs/aileron-cmd-norm" value="0" message="Aileron command at zero (no stick input)"/>
+        <check property="fcs/cas-roll-enable" value="1" message="Roll CAS enabled"/>
+        <check property="fcs/departure-cas-shutdown" value="0" message="No departure CAS shutdown"/>
+        <check property="fcs/aileron-pos-deg" value="0" tol_abs="1.0" message="Aileron position near zero at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Apply full right roll stick at t=3.0 -->
+    <event name="STEP INPUT: full right aileron at t=3.0">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="1.0"/>
+      <notify>
+        <property caption="STEP">fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check 50ms after input -->
+    <event name="TRACE at t+50ms">
+      <condition> simulation/sim-time-sec ge 3.05 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Hydraulic ---">systems/hydraulics/pc1-psi</property>
+        <property>systems/hydraulics/pc2-psi</property>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>systems/hydraulics/util-psi</property>
+        <property>systems/hydraulics/util-pressure</property>
+        <property caption="--- Roll Chain ---">fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/sum-raw-norm</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-input-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/aileron-pos-norm</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Check 200ms after input -->
+    <event name="TRACE at t+200ms">
+      <condition> simulation/sim-time-sec ge 3.2 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Roll Chain ---">fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/sum-raw-norm</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Check 500ms after input -->
+    <event name="TRACE at t+500ms">
+      <condition> simulation/sim-time-sec ge 3.5 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Roll Chain ---">fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/sum-raw-norm</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Check 1.0s after input -->
+    <event name="TRACE at t+1.0s">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Roll Chain ---">fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/rate-commanded-deg_sec</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/sum-raw-norm</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Check 2.0s after input -->
+    <event name="TRACE at t+2.0s">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <notify>
+        <property caption="--- Flight State ---">velocities/vc-kts</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property caption="--- Roll Chain ---">fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Release stick and check decay -->
+    <event name="RELEASE: center stick at t=6.0">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Check after release -->
+    <event name="TRACE after release at t+1.0s">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <notify>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-cas/rate-sensed-deg_sec</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/aileron-pos-norm</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <check property="fcs/aileron-cmd-scheduled" value="0" tol_abs="0.01" message="Aileron command scheduled back to zero after release"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

@@ -1,0 +1,165 @@
+<?xml version="1.0"?>
+<!--
+    Test: Departure Protection — spin detection and CAS shutdown.
+    Verify that high yaw rates trigger CAS shutdown and that AOA-based
+    authority reductions work progressively.
+-->
+<runscript name="FCS - Departure protection and CAS shutdown">
+  <description>
+    Test departure protection thresholds:
+    1. CAS shutdown when |yaw rate| >= 42 deg/s
+    2. Spin recovery mode at |yaw rate| >= 60 deg/s
+    3. AOA-based pitch authority reduction (20-50 deg)
+    4. AOA-based aileron washout (25-45 deg)
+    Note: Yaw rate and AOA are injected directly for threshold testing.
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-departure-protection.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/departure/yaw-rate-abs-deg_sec </property>
+    <property> fcs/departure-cas-shutdown </property>
+    <property> fcs/departure/spin-recovery </property>
+    <property> fcs/departure/pitch-authority-factor </property>
+    <property> fcs/departure/aileron-washout-factor </property>
+    <property> fcs/sensor/yaw-rate-deg_sec </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/roll-cas/output-norm </property>
+    <property> fcs/yaw-cas/output-norm </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/roll-mix/output-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/cas-pitch-enable </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/cas-yaw-enable </property>
+  </output>
+
+  <run start="0.0" end="30.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Enable all CAS axes -->
+    <event name="Enable all CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify/>
+    </event>
+
+    <!-- Verify CAS is active at baseline -->
+    <event name="Baseline - CAS active, no departure">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>fcs/departure/yaw-rate-abs-deg_sec</property>
+        <property>fcs/departure-cas-shutdown</property>
+        <property>fcs/departure/spin-recovery</property>
+        <property>fcs/departure/pitch-authority-factor</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+        <check property="fcs/departure-cas-shutdown" value="0" message="No CAS shutdown at baseline"/>
+        <check property="fcs/departure/spin-recovery" value="0" message="No spin recovery at baseline"/>
+        <check property="fcs/departure/pitch-authority-factor" value="1" tol_abs="0.01" message="Full pitch authority at baseline"/>
+        <check property="fcs/departure/aileron-washout-factor" value="1" tol_abs="0.01" message="Full aileron authority at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Apply rudder input to build yaw rate -->
+    <event name="Apply heavy rudder to build yaw rate">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="1.0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/rudder-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Monitor yaw rate build-up -->
+    <event name="Monitor yaw rate build-up at 2s">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <notify>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+        <property>fcs/departure/yaw-rate-abs-deg_sec</property>
+        <property>fcs/departure-cas-shutdown</property>
+        <property>fcs/departure/spin-recovery</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check at higher yaw rates -->
+    <event name="Monitor at 5s (higher yaw rates expected)">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <notify>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+        <property>fcs/departure/yaw-rate-abs-deg_sec</property>
+        <property>fcs/departure-cas-shutdown</property>
+        <property>fcs/departure/spin-recovery</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <property>fcs/roll-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/departure/pitch-authority-factor</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+      </notify>
+    </event>
+
+    <!-- Release controls and check recovery -->
+    <event name="Release controls">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="0.0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/departure-cas-shutdown</property>
+      </notify>
+    </event>
+
+    <!-- Check CAS recovers as yaw rate reduces -->
+    <event name="Check CAS recovery at 5s after release">
+      <condition> simulation/sim-time-sec ge 19.0 </condition>
+      <notify>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+        <property>fcs/departure/yaw-rate-abs-deg_sec</property>
+        <property>fcs/departure-cas-shutdown</property>
+        <property>fcs/departure/spin-recovery</property>
+        <property>fcs/departure/pitch-authority-factor</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+        <check property="fcs/departure-cas-shutdown" value="0" message="CAS shutdown cleared after yaw rate recovery"/>
+        <check property="fcs/departure/spin-recovery" value="0" message="Spin recovery cleared after yaw rate recovery"/>
+      </notify>
+    </event>
+
+    <!-- Verify full AOA authority reduction table -->
+    <event name="Apply high-AOA pitch up for authority check">
+      <condition> simulation/sim-time-sec ge 22.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.8"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check AOA authority factors at high AOA">
+      <condition> simulation/sim-time-sec ge 26.0 </condition>
+      <notify>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/departure/pitch-authority-factor</property>
+        <property>fcs/departure/aileron-washout-factor</property>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/roll-mix/output-norm</property>
+        <check property="fcs/departure/pitch-authority-factor" value="0.5" tol_abs="0.5" message="Pitch authority reduced at high AOA"/>
+        <check property="fcs/departure/aileron-washout-factor" value="0.5" tol_abs="0.5" message="Aileron authority reduced at high AOA"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

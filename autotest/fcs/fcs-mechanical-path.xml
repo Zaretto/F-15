@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<!--
+    Test: Mechanical Path — pitch/roll ratio changers, stick shaping,
+    pitch prefilter, and gear-down overrides.
+-->
+<runscript name="FCS - Mechanical path ratio changers and shaping">
+  <description>
+    Verify mechanical path components:
+    1. Pitch stick shaping (force-displacement curve)
+    2. Pitch stick prefilter (5/(s+5) lag)
+    3. Pitch ratio changer (qbar + CG schedule)
+    4. Roll ratio (stabilator-position schedule)
+    5. Gear-down overrides (pitch ratio=1, roll ratio=1)
+    6. Emergency ratio (0.5)
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-mechanical-path.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/pitch-stick-trimmed </property>
+    <property> fcs/pitch-stick-scheduled </property>
+    <property> fcs/pitch-stick-prefiltered-norm </property>
+    <property> fcs/pitch-ratio </property>
+    <property> fcs/pitch-stick-adjusted-in </property>
+    <property> fcs/pitch-ratio-calc-0 </property>
+    <property> fcs/pitch-ratio-calc-1 </property>
+    <property> fcs/pitch-ratio-calc </property>
+    <property> aero/qbar-psf </property>
+    <property> inertia/cg-x-mac-percent </property>
+    <property> fcs/roll-ratio-dmd </property>
+    <property> fcs/roll-ratio </property>
+    <property> fcs/aileron-cmd-scheduled </property>
+    <property> fcs/roll-mix/ratio-applied-norm </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> gear/gear-position-norm </property>
+    <property> fcs/pitch-ratio-emergency </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> gear/gear-cmd-norm </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Verify pitch shaping table -->
+    <event name="Check pitch shaping: zero stick">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property>fcs/pitch-stick-trimmed</property>
+        <property>fcs/pitch-stick-scheduled</property>
+        <property>fcs/pitch-stick-prefiltered-norm</property>
+        <property>fcs/pitch-ratio</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <check property="fcs/pitch-stick-trimmed" value="0" tol_abs="0.01" message="Pitch stick trimmed at zero"/>
+        <check property="fcs/pitch-stick-scheduled" value="0" tol_abs="0.01" message="Pitch stick scheduled at zero"/>
+        <check property="fcs/pitch-stick-adjusted-in" value="0" tol_abs="0.05" message="Pitch stick adjusted at zero"/>
+      </notify>
+    </event>
+
+    <!-- Small stick input: should be in deadzone region -->
+    <event name="Small pitch input (near deadzone)">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.1"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check small pitch shaping">
+      <condition> simulation/sim-time-sec ge 3.3 </condition>
+      <notify>
+        <property>fcs/pitch-stick-trimmed</property>
+        <property>fcs/pitch-stick-scheduled</property>
+        <property>fcs/pitch-stick-prefiltered-norm</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+      </notify>
+    </event>
+
+    <!-- Check pitch ratio at current flight conditions -->
+    <event name="Check pitch ratio components">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.5"/>
+      <notify>
+        <property>aero/qbar-psf</property>
+        <property>inertia/cg-x-mac-percent</property>
+        <property>fcs/pitch-ratio-calc-0</property>
+        <property>fcs/pitch-ratio-calc-1</property>
+        <property>fcs/pitch-ratio-calc</property>
+        <property>fcs/pitch-ratio</property>
+        <check property="fcs/pitch-ratio" value="0.5" tol_abs="0.5" message="Pitch ratio within valid range"/>
+      </notify>
+    </event>
+
+    <!-- Check roll ratio (stabilator-position based) -->
+    <event name="Apply roll and check roll ratio">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check roll ratio schedule">
+      <condition> simulation/sim-time-sec ge 6.5 </condition>
+      <notify>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/roll-ratio-dmd</property>
+        <property>fcs/roll-ratio</property>
+        <property>fcs/aileron-cmd-scheduled</property>
+        <property>fcs/roll-mix/ratio-applied-norm</property>
+        <check property="fcs/roll-ratio" value="0.5" tol_abs="0.5" message="Roll ratio within valid range"/>
+      </notify>
+    </event>
+
+    <!-- Simulate gear down: ratios should override to 1.0 -->
+    <event name="Gear down command">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <set name="gear/gear-cmd-norm" value="1"/>
+      <notify>
+        <property>gear/gear-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check gear-down ratio overrides">
+      <condition> simulation/sim-time-sec ge 13.0 </condition>
+      <notify>
+        <property>gear/gear-position-norm</property>
+        <property>fcs/pitch-ratio</property>
+        <property>fcs/roll-ratio</property>
+        <check property="gear/gear-position-norm" value="1" tol_abs="0.01" message="Gear fully down"/>
+        <check property="fcs/pitch-ratio" value="1.0" tol_abs="0.01" message="Pitch ratio overridden to 1.0 with gear down"/>
+        <check property="fcs/roll-ratio" value="1.0" tol_abs="0.01" message="Roll ratio overridden to 1.0 with gear down"/>
+      </notify>
+    </event>
+
+    <!-- Apply stick with gear down to verify ratio=1 -->
+    <event name="Pitch with gear down">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Verify pitch ratio 1.0 with gear down">
+      <condition> simulation/sim-time-sec ge 14.5 </condition>
+      <notify>
+        <property>fcs/pitch-ratio</property>
+        <property>fcs/pitch-stick-prefiltered-norm</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <check property="fcs/pitch-ratio" value="1.0" tol_abs="0.01" message="Pitch ratio 1.0 with gear down confirmed"/>
+      </notify>
+    </event>
+
+    <!-- Test emergency ratio -->
+    <event name="Set pitch ratio emergency">
+      <condition> simulation/sim-time-sec ge 17.0 </condition>
+      <set name="fcs/pitch-ratio-emergency" value="1"/>
+      <set name="gear/gear-cmd-norm" value="0"/>
+      <notify>
+        <property>fcs/pitch-ratio-emergency</property>
+      </notify>
+    </event>
+
+    <event name="Verify emergency pitch ratio 0.5">
+      <condition> simulation/sim-time-sec ge 20.0 </condition>
+      <notify>
+        <property>gear/gear-position-norm</property>
+        <property>fcs/pitch-ratio-emergency</property>
+        <property>fcs/pitch-ratio</property>
+        <check property="fcs/pitch-ratio-emergency" value="1" message="Emergency ratio mode active"/>
+        <check property="fcs/pitch-ratio" value="0.5" tol_abs="0.01" message="Emergency pitch ratio at 0.5"/>
+      </notify>
+    </event>
+
+    <!-- Reset emergency -->
+    <event name="Clear emergency">
+      <condition> simulation/sim-time-sec ge 22.0 </condition>
+      <set name="fcs/pitch-ratio-emergency" value="0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/pitch-ratio</property>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

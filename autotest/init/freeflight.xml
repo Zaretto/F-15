@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<initialize name="reset00">
+  <!--
+    JSBSim reset file for in Air in Iceland for FG 2024.1 scenery
+  -->
+  <ubody unit="FT/SEC"> 700.0  </ubody>
+  <vbody unit="FT/SEC">    0.0  </vbody>
+  <wbody unit="FT/SEC">    0.0  </wbody>
+  <!-- <latitude unit="DEG">   63.985  </latitude>
+  <longitude unit="DEG">  -22.592  </longitude> -->
+  <latitude unit="DEG">36.82747  </latitude>
+  <longitude unit="DEG">-76.23  </longitude>
+  <phi unit="DEG">         0.0  </phi>
+  <theta unit="DEG">       0.0  </theta>
+  <psi unit="DEG">             90  </psi>
+  <altitude unit="FT">   4000  </altitude>
+</initialize>

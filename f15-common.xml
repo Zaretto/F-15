@@ -36,17 +36,26 @@
                 <beta-p-gain>0</beta-p-gain>
                 <!-- Pitch CAS -->
                 <pitch-cas-kq>15.5</pitch-cas-kq>
+                <pitch-cas-nz-gain>1.0</pitch-cas-nz-gain>
+                <pitch-cas-nz-accel-gain>1.0</pitch-cas-nz-accel-gain>
+                <pitch-cas-stick-nz-gain>2.0</pitch-cas-stick-nz-gain>
                 <!-- PTC -->
                 <ptc-i-gain>1.5</ptc-i-gain>
-                <ptc-nz-accelerometer-c1>102</ptc-nz-accelerometer-c1>
+                <ptc-nz-accelerometer-c1>7</ptc-nz-accelerometer-c1>
                 <ptc-nz-accelerometer-limit>1</ptc-nz-accelerometer-limit>
                 <ptc-p-gain>0.267</ptc-p-gain>
                 <ptc-stick-to-g>2.0</ptc-stick-to-g>
-                <ptc-cas-interconnect-gain>0.15</ptc-cas-interconnect-gain>
-                <!-- Yaw CAS -->
+                <ptc-roll-accel-gain>0.01</ptc-roll-accel-gain>
+                <ptc-pitch-accel-gain>0.01</ptc-pitch-accel-gain>
+                <ptc-cas-interconnect-gain>0.1</ptc-cas-interconnect-gain>
+                <!-- Yaw CAS (per AEDC-TR-80-60 schematic):
+                     acceleration-gain: 22 — applied to yaw accel (rad/sec2)
+                     feedback-gain: 0.005 — applied to sum of (accel×22 + rate_highpass)
+                     Signal flow: (accel×22 + rate_hp) → ×0.005 → structural_filter → +crossfeed → ×57.296 → PI -->
                 <yaw-cas-acceleration-gain>22</yaw-cas-acceleration-gain>
                 <yaw-cas-feedback-gain>0.005</yaw-cas-feedback-gain>
                 <yaw-cas-crossfeed-gain>0.02</yaw-cas-crossfeed-gain>
+                <roll-cas-crossfeed-gain>0</roll-cas-crossfeed-gain>
               </cas>
           
               <fcs>
@@ -67,6 +76,7 @@
                 <cas-pitch-enable alias="/sim/model/f15/controls/CAS/cas-pitch-enable" />
                 <cas-roll-enable alias="/sim/model/f15/controls/CAS/cas-roll-enable" />
                 <cas-yaw-enable alias="/sim/model/f15/controls/CAS/cas-yaw-enable" />
+                <ptc-enable type="int">1</ptc-enable>
 
                 <roll-cas-output />
                 <steer-maneuver type="double">0</steer-maneuver>

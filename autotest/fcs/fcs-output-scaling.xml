@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<!--
+    Test: Output Scaling — verify all output properties produce correct
+    ranges, stabilator travel limits, and differential stabilator.
+-->
+<runscript name="FCS - Output scaling and stabilator limits">
+  <description>
+    Verify output property ranges:
+    1. Stabilator: +15 deg TEU / -26 deg TED
+    2. Aileron: +/-20 deg
+    3. Rudder: +/-30 deg
+    4. All norm/rad/deg conversions are consistent
+    5. Elevator left/right norm includes differential component
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-output-scaling.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/elevator-pos-rad </property>
+    <property> fcs/elevator-pos-norm </property>
+    <property> fcs/elevator-left-pos-norm </property>
+    <property> fcs/elevator-right-pos-norm </property>
+    <property> fcs/diff-stab-total-deg </property>
+    <property> fcs/differential-elevator-pos-deg </property>
+    <property> fcs/aileron-pos-deg </property>
+    <property> fcs/aileron-pos-rad </property>
+    <property> fcs/aileron-pos-norm </property>
+    <property> fcs/left-aileron-pos-norm </property>
+    <property> fcs/right-aileron-pos-norm </property>
+    <property> fcs/left-aileron-pos-rad </property>
+    <property> fcs/right-aileron-pos-rad </property>
+    <property> fcs/rudder-pos-deg </property>
+    <property> fcs/rudder-pos-norm </property>
+    <property> fcs/actuator/pitch-output-deg </property>
+    <property> fcs/actuator/roll-output-norm </property>
+    <property> fcs/actuator/yaw-output-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Baseline: check neutral positions -->
+    <event name="Baseline output properties">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-rad</property>
+        <property>fcs/elevator-pos-norm</property>
+        <property>fcs/elevator-left-pos-norm</property>
+        <property>fcs/elevator-right-pos-norm</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/aileron-pos-rad</property>
+        <property>fcs/aileron-pos-norm</property>
+        <property>fcs/left-aileron-pos-norm</property>
+        <property>fcs/right-aileron-pos-norm</property>
+        <property>fcs/rudder-pos-deg</property>
+        <property>fcs/rudder-pos-norm</property>
+        <check property="fcs/aileron-pos-deg" value="0" tol_abs="1.0" message="Aileron near neutral at baseline"/>
+        <check property="fcs/rudder-pos-deg" value="0" tol_abs="1.0" message="Rudder near neutral at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Full aft stick (nose-up in this model: negative cmd = aft): should reach -26 deg TED -->
+    <event name="Apply full aft stick (nose-up)">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-1.0"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check TED limit (-26 deg)">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-rad</property>
+        <property>fcs/elevator-pos-norm</property>
+        <check property="fcs/elevator-pos-deg" value="-26.0" tol_abs="5.0" message="Stabilator near TED limit (-26 deg)"/>
+        <check property="fcs/elevator-pos-norm" value="-1.2" tol_abs="0.3" message="Elevator norm near -1.2 at TED limit (nose-up bias)"/>
+      </notify>
+    </event>
+
+    <!-- Full forward stick (nose-down in this model: positive cmd = fwd): should reach +15 deg TEU -->
+    <event name="Apply full forward stick (nose-down)">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="1.0"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check TEU limit (+15 deg)">
+      <condition> simulation/sim-time-sec ge 8.5 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-rad</property>
+        <property>fcs/elevator-pos-norm</property>
+        <check property="fcs/elevator-pos-deg" value="15.0" tol_abs="5.0" message="Stabilator near TEU limit (+15 deg)"/>
+        <check property="fcs/elevator-pos-norm" value="0.73" tol_abs="0.2" message="Elevator norm ~0.73 at TEU limit (asymmetric range -26/+15)"/>
+      </notify>
+    </event>
+
+    <!-- Full aileron: should reach +/-20 deg -->
+    <event name="Apply full right aileron">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <set name="fcs/aileron-cmd-norm" value="1.0"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check aileron +20 deg limit">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <notify>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/aileron-pos-rad</property>
+        <property>fcs/aileron-pos-norm</property>
+        <property>fcs/left-aileron-pos-rad</property>
+        <property>fcs/right-aileron-pos-rad</property>
+        <property>fcs/left-aileron-pos-norm</property>
+        <property>fcs/right-aileron-pos-norm</property>
+        <check property="fcs/aileron-pos-deg" value="20.0" tol_abs="5.0" message="Aileron near +20 deg limit"/>
+        <check property="fcs/aileron-pos-norm" value="1.0" tol_abs="0.3" message="Aileron norm near +1.0"/>
+      </notify>
+    </event>
+
+    <!-- Full rudder: should reach +/-30 deg -->
+    <event name="Apply full right rudder">
+      <condition> simulation/sim-time-sec ge 13.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <set name="fcs/rudder-cmd-norm" value="1.0"/>
+      <notify>
+        <property>fcs/rudder-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check rudder +30 deg limit">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <notify>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <property>fcs/rudder-pos-norm</property>
+        <check property="fcs/rudder-pos-deg" value="15.0" tol_abs="5.0" message="Rudder near Mach-scheduled 15 deg limit at subsonic"/>
+        <check property="fcs/rudder-pos-norm" value="0.5" tol_abs="0.3" message="Rudder norm near 0.5 (15/30 deg)"/>
+      </notify>
+    </event>
+
+    <!-- Check differential stabilator with roll input -->
+    <event name="Apply roll with pitch for differential check">
+      <condition> simulation/sim-time-sec ge 16.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="0.0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check differential stabilator with roll">
+      <condition> simulation/sim-time-sec ge 17.0 </condition>
+      <notify>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-norm</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>fcs/elevator-left-pos-norm</property>
+        <property>fcs/elevator-right-pos-norm</property>
+      </notify>
+    </event>
+
+    <!-- Verify differential stabilator at zero roll -->
+    <event name="Check diff-stab with zero roll">
+      <condition> simulation/sim-time-sec ge 19.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Verify differential at zero roll">
+      <condition> simulation/sim-time-sec ge 20.0 </condition>
+      <notify>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/differential-elevator-pos-deg</property>
+        <property>fcs/elevator-left-pos-norm</property>
+        <property>fcs/elevator-right-pos-norm</property>
+        <check property="fcs/diff-stab-total-deg" value="0" tol_abs="2.0" message="Differential stabilator near zero at zero roll"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>
