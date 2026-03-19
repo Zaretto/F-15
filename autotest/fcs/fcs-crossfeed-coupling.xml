@@ -1,0 +1,282 @@
+<?xml version="1.0"?>
+<!--
+    Test: Pitch-Roll Coupling Measurement
+    Measures uncommanded roll during pure pitch inputs with crossfeed disabled.
+    Used to derive the correct roll-cas-crossfeed-gain value.
+
+    Method: at each flight condition, apply a pitch-only stick input and hold
+    for several seconds. Record the resulting roll rate, sideslip, and the
+    crossfeed input signals (Nz, pitch rate, pitch accel). The ratio of
+    measured roll disturbance to crossfeed signal gives the required gain.
+-->
+<runscript name="FCS - Pitch-roll coupling measurement for crossfeed calibration">
+  <description>
+    Measure aerodynamic pitch-roll coupling at 20k ft / 300 kts.
+    Three pull levels (0.15, 0.3, 0.5 stick) with zero lateral stick.
+    Crossfeed gain must be 0 for this test to isolate aero coupling.
+    Output CSV provides data to compute crossfeed gain.
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-crossfeed-coupling.csv" type="CSV" rate="20">
+    <property> simulation/sim-time-sec </property>
+    <!-- Flight state -->
+    <property> velocities/vc-kts </property>
+    <property> velocities/mach </property>
+    <property> position/h-sl-ft </property>
+    <property> aero/alpha-deg </property>
+    <property> aero/beta-deg </property>
+    <property> aero/qbar-psf </property>
+    <!-- Body rates -->
+    <property> velocities/p-aero-rad_sec </property>
+    <property> velocities/q-aero-rad_sec </property>
+    <property> velocities/r-aero-rad_sec </property>
+    <!-- Euler angles -->
+    <property> attitude/theta-deg </property>
+    <property> attitude/phi-deg </property>
+    <!-- Load factor -->
+    <property> fcs/sensor/nz-g </property>
+    <property> accelerations/Nz </property>
+    <!-- Pilot inputs -->
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+    <!-- Pitch channel -->
+    <property> fcs/pitch-stick-in </property>
+    <property> fcs/ptc/nz-commanded-g </property>
+    <property> fcs/ptc/total-compensation-deg </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <!-- Roll channel - the coupling we're measuring -->
+    <property> fcs/roll-cas/rate-commanded-deg_sec </property>
+    <property> fcs/roll-cas/rate-sensed-deg_sec </property>
+    <property> fcs/roll-cas/rate-error-deg_sec </property>
+    <property> fcs/roll-cas/output-deg </property>
+    <property> fcs/diff-stab-total-deg </property>
+    <property> fcs/differential-elevator-pos-deg </property>
+    <property> fcs/aileron-pos-deg </property>
+    <!-- Crossfeed signals (what the crossfeed WOULD produce at gain=1) -->
+    <property> fcs/roll-cas/crossfeed-pitch-rate </property>
+    <property> fcs/roll-cas/crossfeed-pitch-rate-washed </property>
+    <property> fcs/roll-cas/crossfeed-sum </property>
+    <property> fcs/roll-cas/pitch-crossfeed-filtered </property>
+    <property> fcs/roll-cas/pitch-crossfeed-deg </property>
+    <!-- Yaw channel -->
+    <property> fcs/yaw-cas/output-deg </property>
+    <property> fcs/rudder-pos-deg </property>
+  </output>
+
+  <run start="0.0" end="60.0" dt="0.008333">
+
+    <!-- === SETUP === -->
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.8"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.8"/>
+      <notify/>
+    </event>
+
+    <event name="Enable all CAS, ensure crossfeed gain is 0">
+      <condition> simulation/sim-time-sec ge 1.0 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <set name="cas/roll-cas-crossfeed-gain" value="0"/>
+      <notify>
+        <property>cas/roll-cas-crossfeed-gain</property>
+      </notify>
+    </event>
+
+    <!-- === BASELINE: wings-level settling === -->
+    <event name="Baseline - record trim state">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>aero/alpha-deg</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+      </notify>
+    </event>
+
+    <!-- === PULL 1: gentle 0.15 stick (negative = aft = nose up in this model) === -->
+    <event name="Pull 1: 0.15 aft stick">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.15"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Pull 1: measure at 1s">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Pull 1: measure at 3s">
+      <condition> simulation/sim-time-sec ge 13.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <!-- Release and settle -->
+    <event name="Release after pull 1">
+      <condition> simulation/sim-time-sec ge 15.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- === PULL 2: moderate 0.3 stick === -->
+    <event name="Pull 2: 0.3 aft stick">
+      <condition> simulation/sim-time-sec ge 22.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Pull 2: measure at 1s">
+      <condition> simulation/sim-time-sec ge 23.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Pull 2: measure at 3s">
+      <condition> simulation/sim-time-sec ge 25.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Release after pull 2">
+      <condition> simulation/sim-time-sec ge 27.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- === PULL 3: aggressive 0.5 stick === -->
+    <event name="Pull 3: 0.5 aft stick">
+      <condition> simulation/sim-time-sec ge 34.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Pull 3: measure at 1s">
+      <condition> simulation/sim-time-sec ge 35.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Pull 3: measure at 3s">
+      <condition> simulation/sim-time-sec ge 37.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Release after pull 3">
+      <condition> simulation/sim-time-sec ge 39.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- === PUSH: check coupling in opposite direction === -->
+    <event name="Push: 0.3 forward stick">
+      <condition> simulation/sim-time-sec ge 46.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Push: measure at 1s">
+      <condition> simulation/sim-time-sec ge 47.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Push: measure at 3s">
+      <condition> simulation/sim-time-sec ge 49.0 </condition>
+      <notify>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>attitude/phi-deg</property>
+        <property>fcs/diff-stab-total-deg</property>
+        <property>fcs/roll-cas/output-deg</property>
+        <property>fcs/roll-cas/pitch-crossfeed-filtered</property>
+        <property>fcs/roll-cas/crossfeed-sum</property>
+      </notify>
+    </event>
+
+    <event name="Release after push">
+      <condition> simulation/sim-time-sec ge 51.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify/>
+    </event>
+
+  </run>
+</runscript>

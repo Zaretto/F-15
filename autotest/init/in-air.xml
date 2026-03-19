@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+    Initialization: in-flight at 10,000 ft, 100 ft/s forward.
+    Engines to be started via propulsion/set-running in script.
+-->
+<initialize name="in-air">
+  <ubody unit="FT/SEC"> 506.0 </ubody>
+  <vbody unit="FT/SEC"> 0.0 </vbody>
+  <wbody unit="FT/SEC"> 0.0 </wbody>
+  <longitude unit="DEG"> -122.3738 </longitude>
+  <latitude unit="DEG"> 37.6195 </latitude>
+  <phi unit="DEG"> 0.0 </phi>
+  <theta unit="DEG"> 0.0 </theta>
+  <psi unit="DEG"> 0.0 </psi>
+  <altitude unit="FT"> 10000.0 </altitude>
+</initialize>

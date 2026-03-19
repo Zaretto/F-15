@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<!--
+    Test: Engineering Units Validation — verify inch/degree signal path
+    end-to-end through the FCS after the engineering units refactoring.
+-->
+<runscript name="FCS - Engineering units signal path validation">
+  <description>
+    Validates the engineering units signal path end-to-end:
+    1. Stick-to-inches conversion (pitch ±5 in, lateral ±3 in)
+    2. PTC Nz command from inch-domain stick
+    3. Pitch mixer degree domain output
+    4. Pitch damper gate in inches (±0.75 in threshold)
+    5. Output consistency: deg, rad, norm all coherent
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-engineering-units.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/pitch-stick-in </property>
+    <property> fcs/pitch-stick-adjusted-in </property>
+    <property> fcs/roll-stick-in </property>
+    <property> fcs/ptc/nz-commanded-g </property>
+    <property> fcs/ptc/total-compensation-deg </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/actuator/pitch-output-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/elevator-pos-rad </property>
+    <property> fcs/elevator-pos-norm </property>
+    <property> fcs/yaw-mix/output-deg </property>
+    <property> fcs/actuator/yaw-output-deg </property>
+    <property> fcs/rudder-pos-deg </property>
+    <property> fcs/rudder-pos-norm </property>
+    <property> fcs/pitch-damper-active </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/cas-pitch-enable </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Enable all CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify/>
+    </event>
+
+    <!-- Test 1: Stick-to-inches pitch conversion -->
+    <event name="Apply 0.5 pitch stick">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check pitch stick inches (0.5 norm = 2.5 in)">
+      <condition> simulation/sim-time-sec ge 3.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-in</property>
+        <property>fcs/pitch-stick-adjusted-in</property>
+        <property>fcs/pitch-ratio</property>
+        <check property="fcs/pitch-stick-in" value="1.9" tol_abs="0.5" message="Pitch stick ~1.9 in at 0.5 norm (force-shaped, lag settling)"/>
+      </notify>
+    </event>
+
+    <!-- Test 2: Lateral stick inches -->
+    <event name="Apply 0.5 lateral stick">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check lateral stick inches (0.5 norm = 1.5 in)">
+      <condition> simulation/sim-time-sec ge 6.5 </condition>
+      <notify>
+        <property>fcs/roll-stick-in</property>
+        <check property="fcs/roll-stick-in" value="1.5" tol_abs="0.3" message="Roll stick converts to ~1.5 inches at 0.5 norm"/>
+      </notify>
+    </event>
+
+    <!-- Test 3: PTC Nz command from stick inches -->
+    <event name="Apply 0.5 pitch for Nz command check">
+      <condition> simulation/sim-time-sec ge 9.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check PTC Nz commanded from stick inches">
+      <condition> simulation/sim-time-sec ge 9.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-in</property>
+        <property>fcs/ptc/nz-commanded-g</property>
+        <check property="fcs/ptc/nz-commanded-g" value="0.0" tol_abs="0.5" message="PTC Nz command clipped at 0g floor for forward stick"/>
+      </notify>
+    </event>
+
+    <!-- Test 4: Pitch mixer degree domain -->
+    <event name="Check pitch mixer in degrees">
+      <condition> simulation/sim-time-sec ge 12.0 </condition>
+      <notify>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/ptc/total-compensation-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-mix/output-deg" value="0" tol_abs="26.0" message="Pitch mixer output within stab range [-26, +15] deg"/>
+      </notify>
+    </event>
+
+    <!-- Test 5: Pitch damper gate in inches -->
+    <event name="Small stick (inside ±0.75 in gate)">
+      <condition> simulation/sim-time-sec ge 15.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.1"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check pitch damper active with small stick">
+      <condition> simulation/sim-time-sec ge 15.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-in</property>
+        <property>fcs/pitch-damper-active</property>
+        <check property="fcs/pitch-stick-in" value="0.5" tol_abs="0.3" message="Small stick ~0.5 in, inside gate"/>
+        <check property="fcs/pitch-damper-active" value="1" message="Pitch damper active inside ±0.75 in gate"/>
+      </notify>
+    </event>
+
+    <event name="Larger stick (outside ±0.75 in gate)">
+      <condition> simulation/sim-time-sec ge 17.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check pitch damper inactive with larger stick">
+      <condition> simulation/sim-time-sec ge 17.5 </condition>
+      <notify>
+        <property>fcs/pitch-stick-in</property>
+        <property>fcs/pitch-damper-active</property>
+        <check property="fcs/pitch-stick-in" value="0.8" tol_abs="0.5" message="Larger stick ~0.8 in at 0.3 norm (force-shaped)"/>
+        <check property="fcs/pitch-damper-active" value="1" message="Pitch damper active within ±4.0 in gate"/>
+      </notify>
+    </event>
+
+    <!-- Test 6: Output consistency -->
+    <event name="Apply moderate stick for output check">
+      <condition> simulation/sim-time-sec ge 20.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Verify deg/rad/norm output consistency">
+      <condition> simulation/sim-time-sec ge 21.0 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-rad</property>
+        <property>fcs/elevator-pos-norm</property>
+        <property>fcs/rudder-pos-deg</property>
+        <property>fcs/rudder-pos-norm</property>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

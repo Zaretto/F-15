@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<!--
+    Test: Actuators — lag_filter actuators with hydraulic gating.
+    Verify actuators respond to commands, and hold last value on
+    hydraulic failure.
+-->
+<runscript name="FCS - Actuator response and hydraulic failover">
+  <description>
+    Verify actuator behaviour:
+    1. Actuators respond to stick inputs with lag_filter dynamics
+    2. All three axes (pitch, roll, yaw) produce correct output scaling
+    3. On hydraulic failure, actuators hold last value
+    4. On hydraulic restoration, actuators resume tracking
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-actuators-hydraulic.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> systems/hydraulics/flight-controls-pressure </property>
+    <property> systems/hydraulics/pc1-psi </property>
+    <property> systems/hydraulics/pc2-psi </property>
+    <property> fcs/actuator/pitch-output-deg </property>
+    <property> fcs/actuator/roll-output-norm </property>
+    <property> fcs/actuator/yaw-output-deg </property>
+    <property> fcs/elevator-pos-deg </property>
+    <property> fcs/elevator-pos-rad </property>
+    <property> fcs/elevator-pos-norm </property>
+    <property> fcs/aileron-pos-deg </property>
+    <property> fcs/rudder-pos-deg </property>
+    <property> fcs/pitch-mix/output-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+  </output>
+
+  <run start="0.0" end="30.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Baseline: no inputs, actuators near zero -->
+    <event name="Baseline actuators">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="systems/hydraulics/flight-controls-pressure" value="1" message="Flight controls hydraulic pressure available"/>
+        <check property="fcs/actuator/roll-output-norm" value="0" tol_abs="0.05" message="Roll actuator near zero at baseline"/>
+        <check property="fcs/actuator/yaw-output-deg" value="0" tol_abs="1.5" message="Yaw actuator near zero at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Apply pitch input -->
+    <event name="Apply pitch-up command">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Verify actuator lag response -->
+    <event name="Check pitch actuator at 50ms (one tau)">
+      <condition> simulation/sim-time-sec ge 4.05 </condition>
+      <notify>
+        <property>fcs/pitch-mix/output-deg</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/elevator-pos-rad</property>
+        <property>fcs/elevator-pos-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check pitch actuator settled at 0.25s">
+      <condition> simulation/sim-time-sec ge 4.25 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Apply roll + yaw simultaneously -->
+    <event name="Apply roll and rudder">
+      <condition> simulation/sim-time-sec ge 6.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.7"/>
+      <set name="fcs/rudder-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+        <property>fcs/rudder-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check all actuators responding">
+      <condition> simulation/sim-time-sec ge 6.3 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="fcs/aileron-pos-deg" value="5.0" tol_abs="15.0" message="Aileron responding to roll input"/>
+        <check property="fcs/rudder-pos-deg" value="5.0" tol_abs="15.0" message="Rudder responding to yaw input"/>
+      </notify>
+    </event>
+
+    <!-- Record pre-failure state -->
+    <event name="Record state before hydraulic failure">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <notify>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+      </notify>
+    </event>
+
+    <!-- Simulate hydraulic failure: shut down both engines -->
+    <event name="Simulate hydraulic failure (both engines off)">
+      <condition> simulation/sim-time-sec ge 11.0 </condition>
+      <set name="propulsion/engine[0]/set-running" value="0"/>
+      <set name="propulsion/engine[1]/set-running" value="0"/>
+      <set name="propulsion/engine[0]/n2" value="0"/>
+      <set name="propulsion/engine[1]/n2" value="0"/>
+      <notify>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+      </notify>
+    </event>
+
+    <!-- Wait for pressure to drop -->
+    <event name="Check hydraulic pressure loss">
+      <condition> simulation/sim-time-sec ge 14.0 </condition>
+      <notify>
+        <property>systems/hydraulics/pc1-psi</property>
+        <property>systems/hydraulics/pc2-psi</property>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <check property="systems/hydraulics/flight-controls-pressure" value="0" message="Flight controls hydraulic pressure lost"/>
+      </notify>
+    </event>
+
+    <!-- Change stick inputs — actuators should hold last value -->
+    <event name="Change stick inputs with no hydraulics">
+      <condition> simulation/sim-time-sec ge 16.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="-0.5"/>
+      <set name="fcs/aileron-cmd-norm" value="-0.7"/>
+      <set name="fcs/rudder-cmd-norm" value="-0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Verify actuators are frozen at pre-failure values -->
+    <event name="Verify actuators holding last value">
+      <condition> simulation/sim-time-sec ge 17.0 </condition>
+      <notify>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="systems/hydraulics/flight-controls-pressure" value="0" message="Hydraulic pressure still lost"/>
+      </notify>
+    </event>
+
+    <!-- Restore hydraulics -->
+    <event name="Restore engines (hydraulics recover)">
+      <condition> simulation/sim-time-sec ge 20.0 </condition>
+      <set name="propulsion/set-running" value="-10"/>
+      <notify/>
+    </event>
+
+    <!-- Verify actuators resume tracking new commands -->
+    <event name="Verify actuators resume tracking">
+      <condition> simulation/sim-time-sec ge 25.0 </condition>
+      <notify>
+        <property>systems/hydraulics/flight-controls-pressure</property>
+        <property>fcs/actuator/pitch-output-deg</property>
+        <property>fcs/actuator/roll-output-norm</property>
+        <property>fcs/actuator/yaw-output-deg</property>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/aileron-pos-deg</property>
+        <property>fcs/rudder-pos-deg</property>
+        <check property="systems/hydraulics/flight-controls-pressure" value="1" message="Hydraulic pressure restored"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

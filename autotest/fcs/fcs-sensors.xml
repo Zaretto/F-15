@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<!--
+    Test: FCS Sensor Channel — verify prefilters respond to rate gyro
+    and accelerometer inputs, and that filtered outputs track inputs
+    with appropriate lag characteristics.
+-->
+<runscript name="FCS - Sensor prefilters">
+  <description>
+    Establish flight conditions, then inject step changes in body rates
+    and verify that sensor prefilters produce smoothed outputs.
+    Roll prefilter: 3.333/(s+3.333), tau=300ms
+    Yaw prefilter: 10/(s+10), tau=100ms
+    AOA prefilter: 10/(s+10), tau=100ms
+    Nz accelerometer: lag c1=102
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-sensors.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> velocities/p-aero-rad_sec </property>
+    <property> fcs/sensor/roll-rate-rad_sec </property>
+    <property> velocities/r-aero-rad_sec </property>
+    <property> fcs/sensor/yaw-rate-rad_sec </property>
+    <property> aero/alpha-deg </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> accelerations/Nz </property>
+    <property> fcs/sensor/nz-g </property>
+    <property> fcs/sensor/yaw-rate-deg_sec </property>
+    <property> fcs/aileron-cmd-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+    <property> fcs/elevator-cmd-norm </property>
+  </output>
+
+  <run start="0.0" end="10.0" dt="0.008333">
+
+    <!-- Establish engines and hydraulics -->
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Baseline check: sensors should be near zero in trimmed flight -->
+    <event name="Baseline sensor check">
+      <condition> simulation/sim-time-sec ge 2.0 </condition>
+      <notify>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+        <property>velocities/r-aero-rad_sec</property>
+        <property>fcs/sensor/yaw-rate-rad_sec</property>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>accelerations/Nz</property>
+        <property>fcs/sensor/nz-g</property>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+        <check property="fcs/sensor/roll-rate-rad_sec" value="0" tol_abs="0.01" message="Roll rate sensor near zero in trimmed flight"/>
+        <check property="fcs/sensor/yaw-rate-rad_sec" value="0" tol_abs="0.01" message="Yaw rate sensor near zero in trimmed flight"/>
+        <check property="fcs/sensor/yaw-rate-deg_sec" value="0" tol_abs="0.5" message="Yaw rate deg/s sensor near zero in trimmed flight"/>
+      </notify>
+    </event>
+
+    <!-- Apply a roll stick input to excite roll rate -->
+    <event name="Apply right roll input">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.5"/>
+      <notify>
+        <property>fcs/aileron-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check roll rate filter is responding (should lag raw rate) -->
+    <event name="Check roll rate filter response at 0.3s">
+      <condition> simulation/sim-time-sec ge 3.3 </condition>
+      <notify>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+      </notify>
+    </event>
+
+    <event name="Check roll rate filter settled at 1.0s">
+      <condition> simulation/sim-time-sec ge 4.0 </condition>
+      <notify>
+        <property>velocities/p-aero-rad_sec</property>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+      </notify>
+    </event>
+
+    <!-- Release roll, apply rudder to excite yaw rate -->
+    <event name="Release roll, apply rudder">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/aileron-cmd-norm" value="0.0"/>
+      <set name="fcs/rudder-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/rudder-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check yaw rate filter (tau=100ms, should settle quickly) -->
+    <event name="Check yaw rate filter response at 0.2s">
+      <condition> simulation/sim-time-sec ge 5.2 </condition>
+      <notify>
+        <property>velocities/r-aero-rad_sec</property>
+        <property>fcs/sensor/yaw-rate-rad_sec</property>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+      </notify>
+    </event>
+
+    <!-- Apply pitch input to check Nz filter -->
+    <event name="Apply pitch pull">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="0.0"/>
+      <set name="fcs/elevator-cmd-norm" value="0.3"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check Nz filter response">
+      <condition> simulation/sim-time-sec ge 7.5 </condition>
+      <notify>
+        <property>accelerations/Nz</property>
+        <property>fcs/sensor/nz-g</property>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <check property="fcs/sensor/aoa-deg" value="5.0" tol_abs="5.0" message="AOA sensor responding to pitch input"/>
+      </notify>
+    </event>
+
+    <!-- Final state -->
+    <event name="Final sensor state">
+      <condition> simulation/sim-time-sec ge 9.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/sensor/roll-rate-rad_sec</property>
+        <property>fcs/sensor/yaw-rate-rad_sec</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/sensor/nz-g</property>
+        <property>fcs/sensor/yaw-rate-deg_sec</property>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<autotest>
+  <system>Flight Control System - CAS, AFCS, ARI, Mechanical Path</system>
+  <ata_chapter>27 - Flight Controls</ata_chapter>
+  <reference>T.O. 1F-15A-1, Section 1 - Flight Control System</reference>
+  <author>Richard Harrison</author>
+  <doc_number>TN-F15-FCS-0001</doc_number>
+  <documentation>../../docs/flight-control-system.md</documentation>
+</autotest>

@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<!--
+    Test: Stall Inhibitor — nose-down pitch command at high AOA.
+    Verify the stall inhibitor activates above 20-25 deg AOA and
+    generates nose-down pitch commands proportional to pitch rate.
+-->
+<runscript name="FCS - Stall inhibitor high-AOA protection">
+  <description>
+    Apply sustained pitch-up to increase AOA beyond the stall
+    inhibitor threshold. Verify:
+    1. Inhibitor inactive below 20deg AOA
+    2. Progressive activation 20-25deg AOA
+    3. Nose-down command proportional to pitch rate
+    4. Output feeds into pitch mixing
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-stall-inhibitor.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> aero/alpha-deg </property>
+    <property> fcs/sensor/aoa-deg </property>
+    <property> velocities/q-aero-rad_sec </property>
+    <property> fcs/stall-inhibitor/raw-norm </property>
+    <property> fcs/stall-inhibitor/aoa-gate </property>
+    <property> fcs/stall-inhibitor/output-norm </property>
+    <property> fcs/pitch-mix/sum-norm </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/cas-pitch-enable </property>
+    <property> fcs/cas-roll-enable </property>
+    <property> fcs/cas-yaw-enable </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.9"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.9"/>
+      <notify/>
+    </event>
+
+    <event name="Enable all CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/cas-roll-enable" value="1"/>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify/>
+    </event>
+
+    <!-- Baseline: low AOA, inhibitor should be inactive -->
+    <event name="Baseline - inhibitor inactive">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/stall-inhibitor/raw-norm</property>
+        <property>fcs/stall-inhibitor/aoa-gate</property>
+        <property>fcs/stall-inhibitor/output-norm</property>
+        <check property="fcs/stall-inhibitor/aoa-gate" value="0" message="AOA gate inactive below 20 deg"/>
+        <check property="fcs/stall-inhibitor/output-norm" value="0" tol_abs="0.01" message="Stall inhibitor output zero at low AOA"/>
+      </notify>
+    </event>
+
+    <!-- Pull back hard to increase AOA -->
+    <event name="Apply full aft stick">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.9"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Monitor AOA increase -->
+    <event name="AOA building at 2s">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <notify>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>velocities/q-aero-rad_sec</property>
+        <property>fcs/stall-inhibitor/raw-norm</property>
+        <property>fcs/stall-inhibitor/aoa-gate</property>
+        <property>fcs/stall-inhibitor/output-norm</property>
+        <property>fcs/pitch-mix/sum-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check at higher AOA -->
+    <event name="Check stall inhibitor at 5s (higher AOA expected)">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <notify>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>velocities/q-aero-rad_sec</property>
+        <property>fcs/stall-inhibitor/raw-norm</property>
+        <property>fcs/stall-inhibitor/aoa-gate</property>
+        <property>fcs/stall-inhibitor/output-norm</property>
+        <property>fcs/pitch-mix/sum-norm</property>
+      </notify>
+    </event>
+
+    <!-- Sustained high AOA -->
+    <event name="Sustained high-AOA check at 10s">
+      <condition> simulation/sim-time-sec ge 15.0 </condition>
+      <notify>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/stall-inhibitor/raw-norm</property>
+        <property>fcs/stall-inhibitor/aoa-gate</property>
+        <property>fcs/stall-inhibitor/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Release stick, check inhibitor deactivates -->
+    <event name="Release stick">
+      <condition> simulation/sim-time-sec ge 18.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/stall-inhibitor/output-norm</property>
+      </notify>
+    </event>
+
+    <event name="Check inhibitor off as AOA decreases">
+      <condition> simulation/sim-time-sec ge 22.0 </condition>
+      <notify>
+        <property>aero/alpha-deg</property>
+        <property>fcs/sensor/aoa-deg</property>
+        <property>fcs/stall-inhibitor/aoa-gate</property>
+        <property>fcs/stall-inhibitor/output-norm</property>
+        <check property="fcs/stall-inhibitor/output-norm" value="0" tol_abs="0.05" message="Stall inhibitor deactivated as AOA decreases"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

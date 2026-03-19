@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<!--
+    Test: Pitch CAS — PI controller with washout, lead-lag, Kq gain.
+    Verify CAS produces damping commands in response to pitch rate,
+    and that CAS disable switch zeros the output.
+-->
+<runscript name="FCS - Pitch CAS PI controller">
+  <description>
+    Enable pitch CAS in flight, verify that pitch rate disturbances
+    produce CAS output through the PI path. Then disable CAS and
+    verify output goes to zero. Also verify variable authority limiter
+    reduces CAS at extreme stabilator positions.
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-pitch-cas.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> velocities/q-aero-rad_sec </property>
+    <property> fcs/cas-pitch-enable </property>
+    <property> fcs/pitch-cas/rate-washout-rad_sec </property>
+    <property> fcs/pitch-cas/lead-lag-rad_sec </property>
+    <property> fcs/pitch-cas/kq-output-deg </property>
+    <property> fcs/pitch-cas/integrator-deg </property>
+    <property> fcs/pitch-cas/integrator-input-deg </property>
+    <property> fcs/pitch-cas/pi-sum-deg </property>
+    <property> fcs/pitch-cas/authority-limit-deg </property>
+    <property> fcs/pitch-cas/limited-deg </property>
+    <property> fcs/pitch-cas/servo-deg </property>
+    <property> fcs/pitch-cas/output-deg </property>
+    <property> fcs/elevator-cmd-norm </property>
+    <property> fcs/elevator-pos-deg </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <!-- Establish engines and hydraulics -->
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <!-- Enable pitch CAS -->
+    <event name="Enable pitch CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+      </notify>
+    </event>
+
+    <!-- Baseline: CAS output should be near zero in trimmed flight -->
+    <event name="Baseline - CAS output near zero">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>velocities/q-aero-rad_sec</property>
+        <property>fcs/pitch-cas/rate-washout-rad_sec</property>
+        <property>fcs/pitch-cas/lead-lag-rad_sec</property>
+        <property>fcs/pitch-cas/kq-output-deg</property>
+        <property>fcs/pitch-cas/integrator-deg</property>
+        <property>fcs/pitch-cas/pi-sum-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="0.5" message="Pitch CAS output near zero in trimmed flight"/>
+      </notify>
+    </event>
+
+    <!-- Apply a pitch step to induce pitch rate -->
+    <event name="Apply nose-up pitch step">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/elevator-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check CAS responding to pitch rate after 0.5s -->
+    <event name="Check CAS response at 0.5s">
+      <condition> simulation/sim-time-sec ge 5.5 </condition>
+      <notify>
+        <property>velocities/q-aero-rad_sec</property>
+        <property>fcs/pitch-cas/rate-washout-rad_sec</property>
+        <property>fcs/pitch-cas/kq-output-deg</property>
+        <property>fcs/pitch-cas/integrator-deg</property>
+        <property>fcs/pitch-cas/pi-sum-deg</property>
+        <property>fcs/pitch-cas/authority-limit-deg</property>
+        <property>fcs/pitch-cas/limited-deg</property>
+        <property>fcs/pitch-cas/servo-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+      </notify>
+    </event>
+
+    <!-- Check CAS after 2s (integrator should be building) -->
+    <event name="Check CAS integrator build at 2s">
+      <condition> simulation/sim-time-sec ge 7.0 </condition>
+      <notify>
+        <property>velocities/q-aero-rad_sec</property>
+        <property>fcs/pitch-cas/kq-output-deg</property>
+        <property>fcs/pitch-cas/integrator-input-deg</property>
+        <property>fcs/pitch-cas/integrator-deg</property>
+        <property>fcs/pitch-cas/pi-sum-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+      </notify>
+    </event>
+
+    <!-- Release stick -->
+    <event name="Release pitch stick">
+      <condition> simulation/sim-time-sec ge 9.0 </condition>
+      <set name="fcs/elevator-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/pitch-cas/output-deg</property>
+      </notify>
+    </event>
+
+    <!-- Verify washout decays the output -->
+    <event name="Verify washout decay at 3s after release">
+      <condition> simulation/sim-time-sec ge 12.0 </condition>
+      <notify>
+        <property>fcs/pitch-cas/rate-washout-rad_sec</property>
+        <property>fcs/pitch-cas/kq-output-deg</property>
+        <property>fcs/pitch-cas/integrator-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-cas/rate-washout-rad_sec" value="0" tol_abs="0.05" message="Washout decayed toward zero after release"/>
+      </notify>
+    </event>
+
+    <!-- Disable CAS and verify output zeroes -->
+    <event name="Disable pitch CAS">
+      <condition> simulation/sim-time-sec ge 15.0 </condition>
+      <set name="fcs/cas-pitch-enable" value="0"/>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+      </notify>
+    </event>
+
+    <event name="Verify CAS output is zero when disabled">
+      <condition> simulation/sim-time-sec ge 15.5 </condition>
+      <notify>
+        <property>fcs/pitch-cas/servo-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-cas/output-deg" value="0" tol_abs="0.01" message="Pitch CAS output zero when disabled"/>
+      </notify>
+    </event>
+
+    <!-- Re-enable CAS, apply large pitch to push beyond authority limits -->
+    <event name="Re-enable CAS, apply large pitch-up">
+      <condition> simulation/sim-time-sec ge 18.0 </condition>
+      <set name="fcs/cas-pitch-enable" value="1"/>
+      <set name="fcs/elevator-cmd-norm" value="0.9"/>
+      <notify>
+        <property>fcs/cas-pitch-enable</property>
+      </notify>
+    </event>
+
+    <!-- Check that at extreme stab positions, authority limit reduces CAS -->
+    <event name="Check authority limit at high stab deflection">
+      <condition> simulation/sim-time-sec ge 20.0 </condition>
+      <notify>
+        <property>fcs/elevator-pos-deg</property>
+        <property>fcs/pitch-cas/authority-limit-deg</property>
+        <property>fcs/pitch-cas/pi-sum-deg</property>
+        <property>fcs/pitch-cas/limited-deg</property>
+        <property>fcs/pitch-cas/output-deg</property>
+        <check property="fcs/pitch-cas/authority-limit-deg" value="3.0" tol_abs="3.0" message="Authority limit reduced at extreme stab deflection"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>

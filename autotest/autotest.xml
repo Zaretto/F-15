@@ -1,0 +1,488 @@
+<?xml version="1.0"?>
+<!--
+    F-15 Master Autotest Configuration
+
+    Defines all test groups, individual tests, and their output file mappings.
+    Tolerance rules are in validation-package/tolerances.xml (separate concern).
+    Per-group metadata is in each group's test-definition.xml.
+-->
+<autotest-suite aircraft="F-15">
+
+  <paths>
+    <tolerances>validation-package/tolerances.xml</tolerances>
+    <baselines>validation-package/</baselines>
+    <output>output/</output>
+    <init>init/</init>
+  </paths>
+
+
+  <!-- ================================================================== -->
+  <!-- Gas Generator Tests (F100-PW-220 thermodynamic model)              -->
+  <!-- ================================================================== -->
+
+  <test-group name="gasgen" definition="gasgen/test-definition.xml">
+
+    <test name="gasgen-sls-idle"
+          script="gasgen/gasgen-sls-idle.xml">
+      <description>Gas generator station conditions at sea level static idle</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/gasgen-sls-idle.csv"
+                   baseline="gasgen-sls-idle.csv"/>
+    </test>
+
+    <test name="gasgen-sls-mil"
+          script="gasgen/gasgen-sls-mil.xml">
+      <description>Gas generator full station breakdown at sea level static military power</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/gasgen-sls-mil.csv"
+                   baseline="gasgen-sls-mil.csv"/>
+    </test>
+
+    <test name="gasgen-sls-maxab"
+          script="gasgen/gasgen-sls-maxab.xml">
+      <description>Gas generator with afterburner at sea level static max AB</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/gasgen-sls-maxab.csv"
+                   baseline="gasgen-sls-maxab.csv"/>
+    </test>
+
+    <test name="gasgen-30k-m09-mil"
+          script="gasgen/gasgen-30k-m09-mil.xml">
+      <description>Gas generator at 30000 ft Mach 0.9 military power</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/gasgen-30k-m09-mil.csv"
+                   baseline="gasgen-30k-m09-mil.csv"/>
+    </test>
+
+    <test name="gasgen-40k-m15-mil"
+          script="gasgen/gasgen-40k-m15-mil.xml">
+      <description>Gas generator at 40000 ft Mach 1.5 military power</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/gasgen-40k-m15-mil.csv"
+                   baseline="gasgen-40k-m15-mil.csv"/>
+    </test>
+
+  </test-group>
+
+
+  <!-- ================================================================== -->
+  <!-- Electrical System Tests                                            -->
+  <!-- ================================================================== -->
+
+  <test-group name="electrics" definition="electrics/test-definition.xml">
+
+    <test name="electrics-normal-ops"
+          script="electrics/electrics-normal-ops.xml">
+      <description>Normal operations both engines running - all buses powered</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-normal-ops.csv"
+                   baseline="electrics-normal-ops.csv"/>
+    </test>
+
+    <test name="electrics-ground-power"
+          script="electrics/electrics-ground-power.xml">
+      <description>Ground power connection and bus distribution</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-ground-power.csv"
+                   baseline="electrics-ground-power.csv"/>
+    </test>
+
+    <test name="electrics-jfs-pmg"
+          script="electrics/electrics-jfs-pmg.xml">
+      <description>JFS PMG power generation for essential bus</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-jfs-pmg.csv"
+                   baseline="electrics-jfs-pmg.csv"/>
+    </test>
+
+    <test name="electrics-generator-threshold"
+          script="electrics/electrics-generator-threshold.xml">
+      <description>Generator output vs N2 threshold behaviour</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-generator-threshold.csv"
+                   baseline="electrics-generator-threshold.csv"/>
+    </test>
+
+    <test name="electrics-gen-switch-cycling"
+          script="electrics/electrics-gen-switch-cycling.xml">
+      <description>Generator switch on/off cycling and bus-tie response</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-gen-switch-cycling.csv"
+                   baseline="electrics-gen-switch-cycling.csv"/>
+    </test>
+
+    <test name="electrics-transformer-rectifiers"
+          script="electrics/electrics-transformer-rectifiers.xml">
+      <description>TR online/offline logic and DC bus fallback</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-transformer-rectifiers.csv"
+                   baseline="electrics-transformer-rectifiers.csv"/>
+    </test>
+
+    <test name="electrics-left-gen-fail"
+          script="electrics/electrics-left-gen-fail.xml">
+      <description>Left generator failure - bus-tie closes, right gen feeds both sides</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-left-gen-fail.csv"
+                   baseline="electrics-left-gen-fail.csv"/>
+    </test>
+
+    <test name="electrics-right-gen-fail"
+          script="electrics/electrics-right-gen-fail.xml">
+      <description>Right generator failure - bus-tie closes, left gen feeds both sides</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-right-gen-fail.csv"
+                   baseline="electrics-right-gen-fail.csv"/>
+    </test>
+
+    <test name="electrics-dual-gen-fail"
+          script="electrics/electrics-dual-gen-fail.xml">
+      <description>Dual generator failure - emergency generator activation</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-dual-gen-fail.csv"
+                   baseline="electrics-dual-gen-fail.csv"/>
+    </test>
+
+    <test name="electrics-total-power-loss"
+          script="electrics/electrics-total-power-loss.xml">
+      <description>Total power loss - all sources off, all buses dead</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-total-power-loss.csv"
+                   baseline="electrics-total-power-loss.csv"/>
+    </test>
+
+    <test name="electrics-emerg-gen-hyd-threshold"
+          script="electrics/electrics-emerg-gen-hyd-threshold.xml">
+      <description>Emergency generator hydraulic pressure threshold behaviour</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-emerg-gen-hyd-threshold.csv"
+                   baseline="electrics-emerg-gen-hyd-threshold.csv"/>
+    </test>
+
+    <test name="electrics-emerg-gen-modes"
+          script="electrics/electrics-emerg-gen-modes.xml">
+      <description>Emergency generator mode transitions</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-emerg-gen-modes.csv"
+                   baseline="electrics-emerg-gen-modes.csv"/>
+    </test>
+
+    <test name="electrics-bus-tie"
+          script="electrics/electrics-bus-tie.xml">
+      <description>Bus-tie logic with single/dual generator and ground power</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-bus-tie.csv"
+                   baseline="electrics-bus-tie.csv"/>
+    </test>
+
+    <test name="electrics-consumers"
+          script="electrics/electrics-consumers.xml">
+      <description>Electrical consumer serviceability tied to bus power</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/electrics-consumers.csv"
+                   baseline="electrics-consumers.csv"/>
+    </test>
+
+  </test-group>
+
+
+  <!-- ================================================================== -->
+  <!-- Hydraulic System Tests                                             -->
+  <!-- ================================================================== -->
+
+  <test-group name="hydraulics" definition="hydraulics/test-definition.xml">
+
+    <test name="hydraulics-normal-ops"
+          script="hydraulics/hydraulics-normal-ops.xml">
+      <description>Normal operations both engines running - all systems pressurised</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-normal-ops.csv"
+                   baseline="hydraulics-normal-ops.csv"/>
+    </test>
+
+    <test name="hydraulics-jfs-running-feedin"
+          script="hydraulics/hydraulics-jfs-running-feedin.xml">
+      <description>JFS running provides utility hydraulic feed-in</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-jfs-running-feedin.csv"
+                   baseline="hydraulics-jfs-running-feedin.csv"/>
+    </test>
+
+    <test name="hydraulics-bleed-model"
+          script="hydraulics/hydraulics-bleed-model.xml">
+      <description>Flight control surface bleed on PC1/PC2 pressure</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-bleed-model.csv"
+                   baseline="hydraulics-bleed-model.csv"/>
+    </test>
+
+    <test name="hydraulics-pump-failures"
+          script="hydraulics/hydraulics-pump-failures.xml">
+      <description>Individual hydraulic pump failure scenarios</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-pump-failures.csv"
+                   baseline="hydraulics-pump-failures.csv"/>
+    </test>
+
+    <test name="hydraulics-util-asymmetric"
+          script="hydraulics/hydraulics-util-asymmetric.xml">
+      <description>Utility system with asymmetric pump pressures</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-util-asymmetric.csv"
+                   baseline="hydraulics-util-asymmetric.csv"/>
+    </test>
+
+    <test name="hydraulics-left-engine-fail"
+          script="hydraulics/hydraulics-left-engine-fail.xml">
+      <description>Left engine failure - PC1 lost, PC2 and utility on right engine</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-left-engine-fail.csv"
+                   baseline="hydraulics-left-engine-fail.csv"/>
+    </test>
+
+    <test name="hydraulics-right-engine-fail"
+          script="hydraulics/hydraulics-right-engine-fail.xml">
+      <description>Right engine failure - PC2 lost, PC1 and utility on left engine</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-right-engine-fail.csv"
+                   baseline="hydraulics-right-engine-fail.csv"/>
+    </test>
+
+    <test name="hydraulics-dual-engine-fail"
+          script="hydraulics/hydraulics-dual-engine-fail.xml">
+      <description>Dual engine failure - all pumps lost, pressure decay</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-dual-engine-fail.csv"
+                   baseline="hydraulics-dual-engine-fail.csv"/>
+    </test>
+
+    <test name="hydraulics-emerg-generator"
+          script="hydraulics/hydraulics-emerg-generator.xml">
+      <description>Emergency generator utility hydraulic bleed</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-emerg-generator.csv"
+                   baseline="hydraulics-emerg-generator.csv"/>
+    </test>
+
+    <test name="hydraulics-util-rate-limit"
+          script="hydraulics/hydraulics-util-rate-limit.xml">
+      <description>Utility system pressure rate limiting</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-util-rate-limit.csv"
+                   baseline="hydraulics-util-rate-limit.csv"/>
+    </test>
+
+    <test name="hydraulics-windmill-pressure"
+          script="hydraulics/hydraulics-windmill-pressure.xml">
+      <description>Windmill-driven hydraulic pressure at low N2</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-windmill-pressure.csv"
+                   baseline="hydraulics-windmill-pressure.csv"/>
+    </test>
+
+    <test name="hydraulics-pressure-thresholds"
+          script="hydraulics/hydraulics-pressure-thresholds.xml">
+      <description>Pressure boolean threshold transitions</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-pressure-thresholds.csv"
+                   baseline="hydraulics-pressure-thresholds.csv"/>
+    </test>
+
+    <test name="hydraulics-jfs-accumulator"
+          script="hydraulics/hydraulics-jfs-accumulator.xml">
+      <description>JFS accumulator charge and discharge</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/hydraulics-jfs-accumulator.csv"
+                   baseline="hydraulics-jfs-accumulator.csv"/>
+    </test>
+
+  </test-group>
+
+
+  <!-- ================================================================== -->
+  <!-- Environmental Control System Tests                                 -->
+  <!-- ================================================================== -->
+
+  <test-group name="ecs" definition="ecs/test-definition.xml">
+
+    <test name="ecs-cockpit-temperature"
+          script="ecs/ecs-cockpit-temperature.xml">
+      <description>Cockpit temperature: normal ops, canopy open, recovery</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/ecs-cockpit-temperature.csv"
+                   baseline="ecs-cockpit-temperature.csv"/>
+    </test>
+
+    <test name="ecs-windscreen-heating"
+          script="ecs/ecs-windscreen-heating.xml">
+      <description>Windscreen anti-ice heating with power dependency</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/ecs-windscreen-heating.csv"
+                   baseline="ecs-windscreen-heating.csv"/>
+    </test>
+
+    <test name="ecs-pressurisation"
+          script="ecs/ecs-pressurisation.xml">
+      <description>Cabin pressurisation schedule with altitude and canopy</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/ecs-pressurisation.csv"
+                   baseline="ecs-pressurisation.csv"/>
+    </test>
+
+    <test name="ecs-oxygen"
+          script="ecs/ecs-oxygen.xml">
+      <description>Oxygen system pressure, quantity, and supply modes</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/ecs-oxygen.csv"
+                   baseline="ecs-oxygen.csv"/>
+    </test>
+
+  </test-group>
+
+
+  <!-- ================================================================== -->
+  <!-- Aerodynamic Model Tests                                            -->
+  <!-- ================================================================== -->
+
+  <test-group name="aero" definition="aero/test-definition.xml">
+
+    <test name="freeflight"
+          script="aero/freeflight.xml">
+      <description>Free flight aerodynamic stability check</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/freeflight.csv"
+                   baseline="freeflight.csv"/>
+    </test>
+
+  </test-group>
+
+
+  <!-- ================================================================== -->
+  <!-- Flight Control System Tests                                        -->
+  <!-- ================================================================== -->
+
+  <test-group name="fcs" definition="fcs/test-definition.xml">
+
+    <test name="fcs-pitch-cas"
+          script="fcs/fcs-pitch-cas.xml">
+      <description>Pitch CAS PI controller with washout, lead-lag, authority limit</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-pitch-cas.csv"
+                   baseline="fcs-pitch-cas.csv"/>
+    </test>
+
+    <test name="fcs-roll-cas"
+          script="fcs/fcs-roll-cas.xml">
+      <description>Roll CAS rate-command error gain and AOA authority</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-roll-cas.csv"
+                   baseline="fcs-roll-cas.csv"/>
+    </test>
+
+    <test name="fcs-yaw-cas"
+          script="fcs/fcs-yaw-cas.xml">
+      <description>Yaw CAS notch filter, washout, PI controller, AOA crossfeed</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-yaw-cas.csv"
+                   baseline="fcs-yaw-cas.csv"/>
+    </test>
+
+    <test name="fcs-ptc-closed-loop"
+          script="fcs/fcs-ptc-closed-loop.xml">
+      <description>Pitch trim compensation closed-loop Nz tracking</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-ptc-closed-loop.csv"
+                   baseline="fcs-ptc-closed-loop.csv"/>
+    </test>
+
+    <test name="fcs-sensors"
+          script="fcs/fcs-sensors.xml">
+      <description>FCS sensor processing: rates, AOA, Nz</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-sensors.csv"
+                   baseline="fcs-sensors.csv"/>
+    </test>
+
+    <test name="fcs-mechanical-path"
+          script="fcs/fcs-mechanical-path.xml">
+      <description>Mechanical path: pitch/roll ratio scheduling, trim, gear effects</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-mechanical-path.csv"
+                   baseline="fcs-mechanical-path.csv"/>
+    </test>
+
+    <test name="fcs-departure-protection"
+          script="fcs/fcs-departure-protection.xml">
+      <description>Departure protection: CAS shutdown, spin recovery, authority reduction</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-departure-protection.csv"
+                   baseline="fcs-departure-protection.csv"/>
+    </test>
+
+    <test name="fcs-ari"
+          script="fcs/fcs-ari.xml">
+      <description>Aileron-Rudder Interconnect mechanical and CAS paths</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-ari.csv"
+                   baseline="fcs-ari.csv"/>
+    </test>
+
+    <test name="fcs-stall-inhibitor"
+          script="fcs/fcs-stall-inhibitor.xml">
+      <description>Stall inhibitor AOA gate and pitch-down command</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-stall-inhibitor.csv"
+                   baseline="fcs-stall-inhibitor.csv"/>
+    </test>
+
+    <test name="fcs-cas-on-off"
+          script="fcs/fcs-cas-on-off.xml">
+      <description>CAS enable/disable effect on all three axes</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-cas-on-off.csv"
+                   baseline="fcs-cas-on-off.csv"/>
+    </test>
+
+    <test name="fcs-output-scaling"
+          script="fcs/fcs-output-scaling.xml">
+      <description>Surface position output scaling: deg, rad, norm conversions</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-output-scaling.csv"
+                   baseline="fcs-output-scaling.csv"/>
+    </test>
+
+    <test name="fcs-actuators-hydraulic"
+          script="fcs/fcs-actuators-hydraulic.xml">
+      <description>Actuator response with and without hydraulic pressure</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-actuators-hydraulic.csv"
+                   baseline="fcs-actuators-hydraulic.csv"/>
+    </test>
+
+    <test name="fcs-roll-channel-diagnostic"
+          script="fcs/fcs-roll-channel-diagnostic.xml">
+      <description>Full roll channel diagnostic: input through to surface position</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-roll-channel-diagnostic.csv"
+                   baseline="fcs-roll-channel-diagnostic.csv"/>
+    </test>
+
+    <test name="fcs-engineering-units"
+          script="fcs/fcs-engineering-units.xml">
+      <description>Engineering units signal path: inch/degree conversion end-to-end</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-engineering-units.csv"
+                   baseline="fcs-engineering-units.csv"/>
+    </test>
+
+    <test name="fcs-pitch-mixer-deg"
+          script="fcs/fcs-pitch-mixer-deg.xml">
+      <description>Pitch mixer degree-domain architecture: PTC sole authority, no direct stick</description>
+      <data-source level="predicted"/>
+      <output-file name="autotest/output/fcs-pitch-mixer-deg.csv"
+                   baseline="fcs-pitch-mixer-deg.csv"/>
+    </test>
+
+  </test-group>
+
+</autotest-suite>

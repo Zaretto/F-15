@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<!--
+    Test: Yaw CAS — PI controller with structural notch filter and
+    AOA crossfeed. Verify CAS responds to yaw rate disturbances
+    and that the notch filter attenuates structural mode frequencies.
+-->
+<runscript name="FCS - Yaw CAS PI with notch filter">
+  <description>
+    Enable yaw CAS in flight. Apply rudder to induce yaw rate and verify:
+    1. Notch filter processes yaw rate
+    2. Rate washout removes steady-state DC
+    3. AOA crossfeed contributes to feedback
+    4. PI controller produces damping output
+    5. CAS disable zeros output
+  </description>
+
+  <use aircraft="f15a" initialize="flight-20k-300kts"/>
+
+  <output name="autotest/output/fcs-yaw-cas.csv" type="CSV" rate="10">
+    <property> simulation/sim-time-sec </property>
+    <property> fcs/cas-yaw-enable </property>
+    <property> fcs/sensor/yaw-rate-rad_sec </property>
+    <property> fcs/yaw-cas/notch-rad_sec </property>
+    <property> fcs/yaw-cas/rate-washout-rad_sec </property>
+    <property> fcs/yaw-cas/rate-feedback </property>
+    <property> fcs/yaw-cas/aoa-crossfeed </property>
+    <property> fcs/yaw-cas/feedback-sum-deg </property>
+    <property> fcs/yaw-cas/proportional-deg </property>
+    <property> fcs/yaw-cas/integrator-deg </property>
+    <property> fcs/yaw-cas/pi-sum-deg </property>
+    <property> fcs/yaw-cas/output-norm </property>
+    <property> fcs/rudder-cmd-norm </property>
+    <property> velocities/r-aero-rad_sec </property>
+  </output>
+
+  <run start="0.0" end="25.0" dt="0.008333">
+
+    <event name="Set engines running">
+      <condition> simulation/sim-time-sec ge 0.5 </condition>
+      <set name="propulsion/cutoff_cmd" value="0"/>
+      <set name="propulsion/set-running" value="-10"/>
+      <set name="fcs/throttle-cmd-norm[0]" value="0.0"/>
+      <set name="fcs/throttle-cmd-norm[1]" value="0.0"/>
+      <notify/>
+    </event>
+
+    <event name="Enable yaw CAS">
+      <condition> simulation/sim-time-sec ge 1.5 </condition>
+      <set name="fcs/cas-yaw-enable" value="1"/>
+      <notify>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <!-- Baseline -->
+    <event name="Baseline yaw CAS">
+      <condition> simulation/sim-time-sec ge 3.0 </condition>
+      <notify>
+        <property>fcs/sensor/yaw-rate-rad_sec</property>
+        <property>fcs/yaw-cas/notch-rad_sec</property>
+        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
+        <property>fcs/yaw-cas/rate-feedback</property>
+        <property>fcs/yaw-cas/aoa-crossfeed</property>
+        <property>fcs/yaw-cas/feedback-sum-deg</property>
+        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/integrator-deg</property>
+        <property>fcs/yaw-cas/pi-sum-deg</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output near zero at baseline"/>
+        <check property="fcs/yaw-cas/pi-sum-deg" value="0" tol_abs="0.5" message="Yaw CAS PI sum near zero at baseline"/>
+      </notify>
+    </event>
+
+    <!-- Apply rudder step to induce yaw rate -->
+    <event name="Apply right rudder step">
+      <condition> simulation/sim-time-sec ge 5.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="0.4"/>
+      <notify>
+        <property>fcs/rudder-cmd-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check CAS response chain -->
+    <event name="Yaw CAS response at 0.5s">
+      <condition> simulation/sim-time-sec ge 5.5 </condition>
+      <notify>
+        <property>velocities/r-aero-rad_sec</property>
+        <property>fcs/sensor/yaw-rate-rad_sec</property>
+        <property>fcs/yaw-cas/notch-rad_sec</property>
+        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
+        <property>fcs/yaw-cas/rate-feedback</property>
+        <property>fcs/yaw-cas/aoa-crossfeed</property>
+        <property>fcs/yaw-cas/feedback-sum-deg</property>
+        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/integrator-deg</property>
+        <property>fcs/yaw-cas/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check integrator building -->
+    <event name="Yaw CAS integrator at 3s">
+      <condition> simulation/sim-time-sec ge 8.0 </condition>
+      <notify>
+        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/integrator-deg</property>
+        <property>fcs/yaw-cas/pi-sum-deg</property>
+        <property>fcs/yaw-cas/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Release rudder — washout should decay the signal -->
+    <event name="Release rudder">
+      <condition> simulation/sim-time-sec ge 10.0 </condition>
+      <set name="fcs/rudder-cmd-norm" value="0.0"/>
+      <notify>
+        <property>fcs/yaw-cas/output-norm</property>
+      </notify>
+    </event>
+
+    <!-- Check washout decay -->
+    <event name="Washout decay at 2s after release">
+      <condition> simulation/sim-time-sec ge 12.0 </condition>
+      <notify>
+        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
+        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/integrator-deg</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <check property="fcs/yaw-cas/rate-washout-rad_sec" value="0" tol_abs="0.05" message="Yaw washout decaying toward zero"/>
+      </notify>
+    </event>
+
+    <!-- Disable CAS -->
+    <event name="Disable yaw CAS">
+      <condition> simulation/sim-time-sec ge 16.0 </condition>
+      <set name="fcs/cas-yaw-enable" value="0"/>
+      <notify>
+        <property>fcs/cas-yaw-enable</property>
+      </notify>
+    </event>
+
+    <event name="Verify yaw CAS output zeroed">
+      <condition> simulation/sim-time-sec ge 16.5 </condition>
+      <notify>
+        <property>fcs/yaw-cas/pi-sum-deg</property>
+        <property>fcs/yaw-cas/output-norm</property>
+        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output zeroed when disabled"/>
+      </notify>
+    </event>
+
+  </run>
+</runscript>
