@@ -54,7 +54,8 @@
                      Signal flow: (accel×22 + rate_hp) → ×0.005 → structural_filter → +crossfeed → ×57.296 → PI -->
                 <yaw-cas-acceleration-gain>22</yaw-cas-acceleration-gain>
                 <yaw-cas-feedback-gain>0.005</yaw-cas-feedback-gain>
-                <yaw-cas-crossfeed-gain>0.02</yaw-cas-crossfeed-gain>
+                <yaw-cas-proportional-gain>2</yaw-cas-proportional-gain>
+                <yaw-cas-crossfeed-gain>1</yaw-cas-crossfeed-gain>
                 <roll-cas-crossfeed-gain>0</roll-cas-crossfeed-gain>
               </cas>
           

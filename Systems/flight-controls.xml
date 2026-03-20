@@ -2,10 +2,11 @@
 <!-- F-15 Flight Control System
      Richard Harrison: rjh@zaretto.com
      Original: 2014-11-23 (based on F-14)
-     Rewrite:  2025 — F-15-specific CAS/AFCS architecture per:
+     Revised: 2018-11-30 : rewritten
+     Revised: 2024 : Problems with the 2018 rewrite caused me to reverted to the previous version and improve it.
+     Revised: 2025 : Major rewrite to better match F-15 CAS/AFCS architecture per:
        - NASA TM-72861 (Precision Controllability of the F-15)
-       - AEDC-TR-80-60 (F-15 Aero Data)
-       - SR1F-15C-2-22GS-00-1 (Flight Control System Description)
+       - AEDC-TR-80-60
        - MCAIR Eagle Talk (Longitudinal/Lateral/Directional Control articles)
 
      Channel order:
@@ -33,7 +34,7 @@
 -->
 
     <!-- ================================================================== -->
-    <!-- Ch 0: INITIALIZATION — ramp CAS/PTC authority 0→1 over 2 seconds  -->
+    <!-- Ch 0: INITIALIZATION - ramp CAS/PTC authority 0→1 over 2 seconds  -->
     <!-- Prevents integrator windup from Nz transient at sim start          -->
     <!-- Documentation: Docs/F-15-FCS.md                                    -->
     <!-- ================================================================== -->
@@ -140,7 +141,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 2: MECHANICAL â€” stick shaping, ratio changers                   -->
+    <!-- Ch 2: MECHANICAL - stick shaping, ratio changers                   -->
     <!-- ================================================================== -->
     <channel name="Mechanical">
         <!-- Rudder effectivity schedule (retained from original) -->
@@ -392,7 +393,7 @@
 
         <!-- Lateral Ratio Schedule (7) per schematic (fcs-lateral-roll.png):
              2D table f(yaw_rate, stab_cmd). Multiplied with lateral stick.
-             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (7) data -->
+             TODO: Table data estimated - needs AEDC-TR-80-60 schedule (7) data -->
         <fcs_function name="fcs/roll-ratio-dmd">
             <function>
                 <table>
@@ -428,7 +429,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 3: PITCH CAS â€” PI controller per NASA TM-72861                  -->
+    <!-- Ch 3: PITCH CAS - PI controller per NASA TM-72861                  -->
     <!-- Schematic: Docs/fcs-pitch-cas.png  |  Docs/F-15-FCS.md             -->
     <!-- q -> washout -> lead-lag -> Kq -> PI -> variable limiter -> servo  -->
     <!-- ================================================================== -->
@@ -528,7 +529,7 @@
              and the PTC interconnect servo keeps the CAS servo centered so it doesn't
              saturate at the +-10 deg servo stops.
              Ref: NASA TM-72861 Fig 18, Garrison Eagle Talk
-             Schedule (3): Pitch CAS Limit — variable authority limit f(stab_position).
+             Schedule (3): Pitch CAS Limit - variable authority limit f(stab_position).
              TODO: Verify against AEDC-TR-80-60 schedule (3) data.
              Current implementation limits CAS authority to ±2.5 deg within
              stab range -19 to +5, zeroing at physical limits. -->
@@ -612,11 +613,11 @@
         </fcs_function>
 
         <!-- Pitch CAS output is now used directly in degrees by the pitch mixer.
-             No normalization needed — degree-domain signal path. -->
+             No normalization needed - degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 4: PTC â€” Closed-loop load factor trim                           -->
+    <!-- Ch 4: PTC - Closed-loop load factor trim                           -->
     <!-- Schematic: Docs/fcs-ptc.png  |  Docs/F-15-FCS.md                   -->
     <!-- Keeps existing baseline tables, adds Nz error integration on top   -->
     <!-- ================================================================== -->
@@ -636,7 +637,7 @@
              In the real F-15, the force gradient system prevents stick positions
              that would command extreme negative g. On a desktop joystick, small
              forward inputs can easily reach -2g or worse. The 0g floor prevents
-             the PTC from driving aggressive pushover — for unloaded/negative-g
+             the PTC from driving aggressive pushover - for unloaded/negative-g
              flight, the pilot uses direct pitch control (CAS only, no PTC ramp). -->
         <fcs_function name="fcs/ptc/nz-commanded-g">
             <function>
@@ -766,11 +767,11 @@
         </fcs_function>
 
         <!-- PTC total compensation is now used directly in degrees by the pitch mixer.
-             No normalization needed — degree-domain signal path. -->
+             No normalization needed - degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 5: ROLL CAS â€” Rate command system                               -->
+    <!-- Ch 5: ROLL CAS - Rate command system                               -->
     <!-- Schematic: Docs/fcs-roll-cas.png  |  Docs/F-15-FCS.md              -->
     <!-- ================================================================== -->
     <channel name="Roll CAS">
@@ -785,7 +786,7 @@
         </fcs_function>
 
         <!-- Command prefilter: 3.333/(S+3.333) on command path per schematic
-             (NOT on sensor path — moved from Ch1 sensor channel) -->
+             (NOT on sensor path - moved from Ch1 sensor channel) -->
         <lag_filter name="fcs/roll-cas/rate-commanded-deg_sec">
             <input>fcs/roll-cas/rate-commanded-raw-deg_sec</input>
             <c1>3.333</c1>
@@ -807,7 +808,7 @@
              then lead-lag (S/10+1)/(S/30+1).
              Note: the Nz component passes through at DC, providing a constant
              crossfeed at 1g. This compensates for real F-15 pitch-roll aero coupling.
-             The crossfeed gain is tunable — set to 0 until aero coupling is validated. -->
+             The crossfeed gain is tunable - set to 0 until aero coupling is validated. -->
         <fcs_function name="fcs/roll-cas/crossfeed-pitch-rate">
             <function>
                 <product>
@@ -859,9 +860,9 @@
         <!-- Roll CAS Limit Schedule (10) per schematic (fcs-roll-cas.png):
              2D LIMIT schedule f(AOA, mean_stab_defl).
              Provides the variable authority limit (±deg) for the roll CAS output.
-             The schematic labels this "ROLL CAS LIMIT SCHEDULE" — it limits,
+             The schematic labels this "ROLL CAS LIMIT SCHEDULE" - it limits,
              not multiplies, the CAS output.
-             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (10) data -->
+             TODO: Table data estimated - needs AEDC-TR-80-60 schedule (10) data -->
         <fcs_function name="fcs/roll-cas/aoa-authority">
             <function>
                 <table>
@@ -910,11 +911,11 @@
         </fcs_function>
 
         <!-- Roll CAS output is now used directly in degrees by the diff-stab actuator.
-             No normalization needed — degree-domain signal path. -->
+             No normalization needed - degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 6: YAW CAS â€” Accel + rate + crossfeed per AEDC-TR-80-60         -->
+    <!-- Ch 6: YAW CAS - Accel + rate + crossfeed per AEDC-TR-80-60         -->
     <!-- Schematic: Docs/fcs-yaw-cas.png  |  Docs/F-15-FCS.md              -->
     <!-- ================================================================== -->
     <channel name="Yaw CAS">
@@ -924,9 +925,11 @@
              Both paths sum → ×(180/π) → PI controller (limit ±3.75, integrator 0.5/S) → limit ±15
         -->
 
-        <!-- Yaw acceleration path: ×22 per schematic -->
+        <!-- Yaw acceleration path: direct rdot × 22 per schematic.
+             No washout - the schematic shows YAW ACC (rad/sec2) going directly
+             to ×22. JSBSim provides the actual rdot. -->
         <pure_gain name="fcs/yaw-cas/accel-gained">
-            <input>fcs/sensor/yaw-accel-rad_sec2</input>
+            <input>accelerations/rdot-rad_sec2</input>
             <gain>cas/yaw-cas-acceleration-gain</gain>
         </pure_gain>
 
@@ -936,20 +939,34 @@
             <c1>0.5</c1>
         </washout_filter>
 
-        <!-- Sum accel×22 + rate highpass per schematic -->
-        <summer name="fcs/yaw-cas/accel-rate-sum">
-            <input>fcs/yaw-cas/accel-gained</input>
-            <input>fcs/yaw-cas/rate-highpass-rad_sec</input>
-        </summer>
-
-        <!-- ×0.005 feedback gain per schematic -->
-        <pure_gain name="fcs/yaw-cas/accel-rate-gained">
-            <input>fcs/yaw-cas/accel-rate-sum</input>
-            <gain>cas/yaw-cas-feedback-gain</gain>
+        <!-- Sum lateral_acc + accel×22 + rate highpass per schematic
+             (Docs/yaw-cas-0.png shows LATERAL ACC entering the same sum).
+             Lateral acc provides direct sideslip feedback - proportional to
+             beta, this is the primary dutch roll damping term.
+             Uses Ny×g (accelerometer-sensed lateral specific force in ft/sec2),
+             NOT vdot (which includes gravity and creates runaway during banking). -->
+        <!-- Lateral acc in g's (no conversion). Ny at ~0.022g in cruise
+             is comparable to structural filter (~0.003) and rate hp (~0.05),
+             giving a balanced contribution through ×57.3. -->
+        <pure_gain name="fcs/yaw-cas/lateral-acc-ft_sec2">
+            <input>accelerations/Ny</input>
+            <gain>1.0</gain>
         </pure_gain>
 
-        <!-- Structural notch filter: [(S/22)^2+2(0.4)(S/22)+1]/[(S/22)^2+2(S/22)+1]
-             per schematic -->
+        <!-- YAW ACC×22 × 0.005 + LATERAL ACC (ft/sec2) per schematic -->
+        <fcs_function name="fcs/yaw-cas/accel-rate-gained">
+            <function>
+                <product>
+                    <sum>
+                        <property>fcs/yaw-cas/accel-gained</property>
+                        <property>fcs/yaw-cas/lateral-acc-ft_sec2</property>
+                    </sum>
+                    <property>cas/yaw-cas-feedback-gain</property>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- Structural notch filter on accel path only -->
         <second_order_filter name="fcs/yaw-cas/structural-filter">
             <input>fcs/yaw-cas/accel-rate-gained</input>
             <c1>1</c1>
@@ -961,57 +978,93 @@
         </second_order_filter>
 
         <!-- Roll-yaw crossfeed per schematic:
-             PITCH_RATE × LATERAL_ACC → schedule(13) → washout S/(S+1)
-             Enters pre-PI summer with (-) sign -->
-        <fcs_function name="fcs/yaw-cas/crossfeed-product">
+             PITCH RATE × ANGLE OF ATTACK → schedule(13) → washout S/(S+1)
+             Lateral acc goes to the main sum, NOT the crossfeed.
+             This crossfeed provides yaw coordination during pitch maneuvers
+             at high AOA (pitch rate × AOA is non-zero during pull at alpha).
+             At zero pitch rate or zero AOA, the crossfeed is zero. -->
+        <!-- Crossfeed: pitch_rate × schedule_13(AOA)
+             Schedule (13) is a 1D table keyed on AOA providing a gain factor.
+             The crossfeed compensates for pitch-yaw coupling which varies with AOA.
+             TODO: table values derived from autotest pitch-doublet sweeps. -->
+        <fcs_function name="fcs/yaw-cas/crossfeed-value">
             <function>
                 <product>
                     <property>velocities/q-aero-rad_sec</property>
-                    <property>accelerations/vdot-ft_sec2</property>
+                    <property>fcs/sensor/aoa-deg</property>
                 </product>
             </function>
         </fcs_function>
 
-        <!-- Crossfeed Schedule (13): estimated — needs AEDC data -->
-        <fcs_function name="fcs/yaw-cas/crossfeed-scheduled">
+        <fcs_function name="fcs/yaw-cas/crossfeed-product">
             <function>
-                <table>
-                    <independentVar lookup="row">fcs/yaw-cas/crossfeed-product</independentVar>
-                    <tableData>
-                        -50    -0.5
-                        -10    -0.1
-                          0     0.0
-                         10     0.1
-                         50     0.5
-                    </tableData>
-                </table>
+                <sum>
+                    <product>
+                        <property>cas/yaw-cas-crossfeed-gain</property>
+                        <property>fcs/yaw-cas/crossfeed-value</property>
+                    </product>
+                    <table>
+                        <independentVar lookup="row">fcs/yaw-cas/crossfeed-value</independentVar>
+                        <tableData>
+                            -5 0.0
+                            0 0.0
+                            5 0.0
+                            10 0.0
+                            15 0.0
+                            20 0.0
+                            30 0.0
+                        </tableData>
+                    </table>
+                </sum>
+            </function>
+        </fcs_function>
+        <!-- Rudder pedal feedback: pedal position × 4.615 → prefilter 10/(S+10).
+             Converts pedal inches to deg equivalent. Prevents CAS from fighting
+             pilot rudder input. rudder-cmd-norm × 3.0 (inches travel) × 4.615 -->
+        <!-- Rudder pedal × 4.615: converts pedal inches to feedback signal.
+             rudder-cmd-norm × pedal_travel_inches gives pedal position in inches. -->
+        <fcs_function name="fcs/yaw-cas/pedal-cmd-scaled">
+            <function>
+                <product>
+                    <property>fcs/rudder-cmd-norm</property>
+                    <value>4.615</value>
+                </product>
             </function>
         </fcs_function>
 
+        <lag_filter name="fcs/yaw-cas/pedal-prefiltered">
+            <input>fcs/yaw-cas/pedal-cmd-scaled</input>
+            <c1>10</c1>
+        </lag_filter>
+
         <!-- Crossfeed washout: S/(S+1) per schematic -->
         <washout_filter name="fcs/yaw-cas/crossfeed-washout">
-            <input>fcs/yaw-cas/crossfeed-scheduled</input>
+            <input>fcs/yaw-cas/crossfeed-product</input>
             <c1>1.0</c1>
         </washout_filter>
 
-        <!-- Feedback sum per schematic: structural_filter - crossfeed - AOA_prefilter,
-             then ×(180/π), clip ±3.75 -->
-        <fcs_function name="fcs/yaw-cas/feedback-sum-deg">
+        <!-- Convert (structural_filter + rate_highpass) to degrees.
+             Lateral acc enters AFTER ×0.005 and AFTER structural filter. -->
+        <fcs_function name="fcs/yaw-cas/feedback-deg">
             <function>
                 <product>
                     <sum>
                         <property>fcs/yaw-cas/structural-filter</property>
-                        <product>
-                            <value>-1.0</value>
-                            <property>fcs/yaw-cas/crossfeed-washout</property>
-                        </product>
-                        <product>
-                            <value>-1.0</value>
-                            <property>fcs/sensor/aoa-deg</property>
-                            <value>0.017453</value>
-                        </product>
+                        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
                     </sum>
                     <value>57.29578</value>
+                </product>
+            </function>
+        </fcs_function>
+
+        <!-- PROPORTIONAL: fraction of feedback in degrees.
+             Schematic shows LIMIT ±3.75 but no explicit Kp gain.
+             Tunable via cas/yaw-cas-proportional-gain. -->
+        <fcs_function name="fcs/yaw-cas/damper-output-deg">
+            <function>
+                <product>
+                    <property>fcs/yaw-cas/feedback-deg</property>
+                    <property>cas/yaw-cas-proportional-gain</property>
                 </product>
             </function>
             <clipto>
@@ -1020,25 +1073,9 @@
             </clipto>
         </fcs_function>
 
-        <!-- Diagnostic: individual feedback paths for CSV -->
-        <pure_gain name="fcs/yaw-cas/accel-feedback">
-            <input>fcs/yaw-cas/accel-rate-gained</input>
-            <gain>57.29578</gain>
-        </pure_gain>
-
-        <fcs_function name="fcs/yaw-cas/rate-feedback">
-            <function>
-                <product>
-                    <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
-                    <property>cas/yaw-cas-feedback-gain</property>
-                    <value>57.29578</value>
-                </product>
-            </function>
-        </fcs_function>
-
-        <!-- Integrator: 0.5/S, clip ±3.75 per schematic -->
+        <!-- INTEGRAL: 0.5/S on the feedback in degrees, clip ±3.75 -->
         <integrator name="fcs/yaw-cas/integrator-deg">
-            <input>fcs/yaw-cas/feedback-sum-deg</input>
+            <input>fcs/yaw-cas/damper-output-deg</input>
             <c1>0.5</c1>
             <clipto>
                 <min>-3.75</min>
@@ -1046,10 +1083,13 @@
             </clipto>
         </integrator>
 
-        <!-- PI sum: proportional (feedback-sum) + integral -->
+        <!-- Output sum: -D(pedal) - C(crossfeed) + E(proportional) + F(integral)
+             clip ±15 per schematic -->
         <summer name="fcs/yaw-cas/pi-sum-deg">
-            <input>fcs/yaw-cas/feedback-sum-deg</input>
+            <input>fcs/yaw-cas/damper-output-deg</input>
             <input>fcs/yaw-cas/integrator-deg</input>
+            <input>-fcs/yaw-cas/crossfeed-washout</input>
+            <input>-fcs/yaw-cas/pedal-prefiltered</input>
             <clipto>
                 <min>-15</min>
                 <max>15</max>
@@ -1075,11 +1115,11 @@
         </fcs_function>
 
         <!-- Yaw CAS output is now used directly in degrees by the yaw mixer.
-             No normalization needed — degree-domain signal path. -->
+             No normalization needed - degree-domain signal path. -->
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 7: DEPARTURE PROTECTION â€” spin detection, CAS shutdown          -->
+    <!-- Ch 7: DEPARTURE PROTECTION - spin detection, CAS shutdown          -->
     <!-- ================================================================== -->
     <channel name="Departure Protection">
         <!-- Spin detection: |yaw rate| >= 42 deg/s = CAS shutdown -->
@@ -1140,7 +1180,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 8: ARI â€” Dual mechanical/CAS with asymmetric gradients          -->
+    <!-- Ch 8: ARI - Dual mechanical/CAS with asymmetric gradients          -->
     <!-- Schematic: Docs/fcs-ari.png  |  Docs/F-15-FCS.md                   -->
     <!-- Proverse (back-stick) = 0.55 deg rud/deg ail                       -->
     <!-- Adverse (forward-stick) = 0.85 deg rud/deg ail                     -->
@@ -1216,7 +1256,7 @@
         <!-- CAS ARI roll rate scaling: ramp from 0 at 2 deg/s to 1.0 at 30 deg/s.
              The previous 10 deg/s dead zone left no rudder coordination during
              roll initiation, allowing adverse yaw to build beta unchecked.
-             Per Garrison: CAS ARI "operates at all speeds" — it should engage
+             Per Garrison: CAS ARI "operates at all speeds" - it should engage
              early in the roll, not wait for high roll rates. -->
         <fcs_function name="fcs/ari/roll-rate-factor">
             <description>CAS ARI roll rate scaling: |p| ramps 0→1 over 2-30 deg/s</description>
@@ -1269,13 +1309,13 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 9: STALL INHIBITOR â€” pitch rate to AOA conversion path          -->
+    <!-- Ch 9: STALL INHIBITOR - pitch rate to AOA conversion path          -->
     <!-- Active above ~20-25deg AOA, provides nose-down pitch command       -->
     <!-- ================================================================== -->
     <channel name="Stall Inhibitor">
         <!-- Stall Inhibitor Schedule (4) per schematic (fcs-pitch-cas.png):
              PITCH RATE × 180/π → WASHOUT 0.5S/(0.5S+1) → sum with AOA → schedule (4)
-             TODO: Table data estimated — needs AEDC-TR-80-60 schedule (4) data -->
+             TODO: Table data estimated - needs AEDC-TR-80-60 schedule (4) data -->
 
         <!-- Pitch rate in deg/s -->
         <pure_gain name="fcs/stall-inhibitor/pitch-rate-deg_sec">
@@ -1324,14 +1364,14 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 10: MIXING â€” sum mechanical + CAS + PTC + AFCS, apply limits   -->
+    <!-- Ch 10: MIXING - sum mechanical + CAS + PTC + AFCS, apply limits   -->
     <!-- ================================================================== -->
     <channel name="Mixing">
         <!-- ============================================================ -->
         <!-- Pitch mixing in DEGREES per schematic (fcs-stab-actuators.png):
              HORIZ STAB COMMAND is the primary stabilator command from PTC.
              CAS series servo adds ±2.5 deg (±10 deg physical range).
-             No separate direct stick — stick goes through PTC mechanical path.
+             No separate direct stick - stick goes through PTC mechanical path.
              Stab range: +15 TEU / -26 TED                                  -->
         <!-- ============================================================ -->
         <summer name="fcs/pitch-mix/sum-deg">
@@ -1440,9 +1480,9 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 11: ACTUATORS â€” lag_filter 20/(s+20) with hydraulic gating     -->
+    <!-- Ch 11: ACTUATORS - lag_filter 20/(s+20) with hydraulic gating     -->
     <!-- Schematic: Docs/fcs-stab-actuators.png  |  Docs/F-15-FCS.md       -->
-    <!-- tau=50ms, BW=3.18Hz â€” replaces kinematic elements                 -->
+    <!-- tau=50ms, BW=3.18Hz - replaces kinematic elements                 -->
     <!-- ================================================================== -->
     <channel name="Actuators">
         <!-- Pitch actuator: hold last value on hydraulic failure -->
@@ -1481,7 +1521,7 @@
 
         <!-- Roll CAS series servo actuator (diff stab only, bypasses 0.3 coupling).
              Per Garrison: "Roll command augmentation is provided through the
-             stabilator CAS series servos" — CAS series servo acts directly on
+             stabilator CAS series servos" - CAS series servo acts directly on
              stabilator actuator, separate from the mechanical 0.3 deg coupling.
              Ref: NASA TM-72861 appendix, Garrison Eagle Talk -->
         <switch name="fcs/actuator/roll-cas-input-deg">
@@ -1536,7 +1576,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 12: OUTPUT SCALING â€” convert to rad/deg/norm, diff stabilator   -->
+    <!-- Ch 12: OUTPUT SCALING - convert to rad/deg/norm, diff stabilator   -->
     <!-- Schematic: Docs/fcs-lateral-roll.png, fcs-pitch-ratio.png          -->
     <!-- Stabilator: +15 deg TEU / -26 deg TED                             -->
     <!-- Aileron: +/-20 deg                                                 -->
@@ -1544,7 +1584,7 @@
     <!-- ================================================================== -->
     <channel name="Output Scaling">
         <!-- ============================================================ -->
-        <!-- Elevator/Stabilator output — degree-domain actuator output    -->
+        <!-- Elevator/Stabilator output - degree-domain actuator output    -->
         <!-- ============================================================ -->
 
         <!-- Elevator position in degrees (direct from actuator) -->
@@ -1779,7 +1819,7 @@
         </fcs_function>
 
         <!-- ============================================================ -->
-        <!-- Rudder output — degree-domain actuator output                 -->
+        <!-- Rudder output - degree-domain actuator output                 -->
         <!-- ============================================================ -->
         <pure_gain name="fcs/rudder-pos-deg">
             <input>fcs/actuator/yaw-output-deg</input>
@@ -1798,7 +1838,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 13: FLAPS â€” existing, verbatim from original                    -->
+    <!-- Ch 13: FLAPS                                                       -->
     <!-- ================================================================== -->
     <channel name="Flaps">
         <switch name="fcs/flap-total-dmd">
@@ -1847,7 +1887,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 14: LANDING GEAR â€” existing, verbatim from original             -->
+    <!-- Ch 14: LANDING GEAR                                                -->
     <!-- ================================================================== -->
     <channel name="Landing Gear">
         <!-- Deplete the JFS store-->
@@ -2143,7 +2183,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 15: SPEEDBRAKE â€” existing, verbatim from original               -->
+    <!-- Ch 15: SPEEDBRAKE                                                  -->
     <!-- ================================================================== -->
     <channel name="Speedbrake">
         <switch name="fcs/speedbrake-dmd-norm">
@@ -2178,7 +2218,7 @@
     </channel>
 
     <!-- ================================================================== -->
-    <!-- Ch 16: HOOK â€” existing, verbatim from original                     -->
+    <!-- Ch 16: HOOK                                                        -->
     <!-- ================================================================== -->
     <channel name="Hook">
         <kinematic name="fcs/hook-control">
