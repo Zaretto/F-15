@@ -392,7 +392,17 @@ var MPCD_Device =
         #svg.holeTopFromMyPos_y = svg.myPos_y-svg.holeTop_y;
         
         svg.p_HSD = me.PFD._canvas.createGroup();
-        #logprint(3, "h "~svg.holeHeight);#339
+
+        # Canvas map element for geo-positioned items (contacts, route, steerpoints)
+        # This replaces manual trig positioning - the C++ map projection handles
+        # lat/lon to screen conversion and heading-up rotation.
+        svg.sit_map = svg.p_HSD.createChild("map")
+            .setTranslation(svg.myPos_x, svg.myPos_y)
+            .set("z-index",2);
+        # NM-to-pixel ratio: holeHeight pixels = holeRange NM (set in update)
+        # Use half-values for range/screenRange (distance from center to edge)
+        svg.sit_map_screenRange = svg.holeHeight * 0.5;
+
         svg.hole = svg.p_HSD.createChild("path")
             .moveTo(svg.holeRadius,0)
             .arcSmallCW(svg.holeRadius,svg.holeRadius, 0, -svg.holeRadius*2, 0)
@@ -409,168 +419,76 @@ var MPCD_Device =
                 .set("blend-destination-rgb","one")
                 .set("blend-destination-alpha","one-minus-src-alpha")
                 .set("src", "Aircraft/F-15/Nasal/MPCD/sit-mask.png");
-        #printf("leftc %d,%d  size %d,%d",svg.width*0.5-svg.holeRadius,svg.height/svg.width*(svg.height*0.5-svg.holeRadius),svg.holeRadius*2,svg.height/svg.width*(svg.holeRadius*2));
-        #printf("%d, %d",svg.width,svg.height);
-        
+
         svg.p_HSDcompass = svg.p_HSD.createChild("group")
             .setTranslation(svg.myPos_x,svg.myPos_y).set("z-index",10002);
-        
+
         svg.compassRadius = svg.holeRadius*0.5;
         svg.compassL = 10;
-        svg.c0 = svg.p_HSDcompass.createChild("text")
-                .setText("N")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(-90*D2R), svg.compassRadius*math.sin(-90*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c3 = svg.p_HSDcompass.createChild("text")
-                .setText("3")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(-60*D2R), svg.compassRadius*math.sin(-60*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c6 = svg.p_HSDcompass.createChild("text")
-                .setText("6")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(-30*D2R), svg.compassRadius*math.sin(-30*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c9 = svg.p_HSDcompass.createChild("text")
-                .setText("E")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(0*D2R), svg.compassRadius*math.sin(0*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c12 = svg.p_HSDcompass.createChild("text")
-                .setText("12")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(30*D2R), svg.compassRadius*math.sin(30*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c15 = svg.p_HSDcompass.createChild("text")
-                .setText("15")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(60*D2R), svg.compassRadius*math.sin(60*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c18 = svg.p_HSDcompass.createChild("text")
-                .setText("S")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(90*D2R), svg.compassRadius*math.sin(90*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c21 = svg.p_HSDcompass.createChild("text")
-                .setText("21")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(120*D2R), svg.compassRadius*math.sin(120*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c24 = svg.p_HSDcompass.createChild("text")
-                .setText("24")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(150*D2R), svg.compassRadius*math.sin(150*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c27 = svg.p_HSDcompass.createChild("text")
-                .setText("W")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(180*D2R), svg.compassRadius*math.sin(180*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c30 = svg.p_HSDcompass.createChild("text")
-                .setText("30")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(210*D2R), svg.compassRadius*math.sin(210*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.c33 = svg.p_HSDcompass.createChild("text")
-                .setText("33")
-                .setAlignment("center-center")
-                .setColor(0,1,0)
-                .setTranslation(svg.compassRadius*math.cos(240*D2R), svg.compassRadius*math.sin(240*D2R))
-                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0);
-        svg.compassLines = svg.p_HSDcompass.createChild("path")
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(10*D2R), (svg.compassRadius-svg.compassL)*math.sin(10*D2R))
-                .lineTo(svg.compassRadius*math.cos(10*D2R), svg.compassRadius*math.sin(10*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(20*D2R), (svg.compassRadius-svg.compassL)*math.sin(20*D2R))
-                .lineTo(svg.compassRadius*math.cos(20*D2R), svg.compassRadius*math.sin(20*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(40*D2R), (svg.compassRadius-svg.compassL)*math.sin(40*D2R))
-                .lineTo(svg.compassRadius*math.cos(40*D2R), svg.compassRadius*math.sin(40*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(50*D2R), (svg.compassRadius-svg.compassL)*math.sin(50*D2R))
-                .lineTo(svg.compassRadius*math.cos(50*D2R), svg.compassRadius*math.sin(50*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(70*D2R), (svg.compassRadius-svg.compassL)*math.sin(70*D2R))
-                .lineTo(svg.compassRadius*math.cos(70*D2R), svg.compassRadius*math.sin(70*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(80*D2R), (svg.compassRadius-svg.compassL)*math.sin(80*D2R))
-                .lineTo(svg.compassRadius*math.cos(80*D2R), svg.compassRadius*math.sin(80*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(100*D2R), (svg.compassRadius-svg.compassL)*math.sin(100*D2R))
-                .lineTo(svg.compassRadius*math.cos(100*D2R), svg.compassRadius*math.sin(100*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(110*D2R), (svg.compassRadius-svg.compassL)*math.sin(110*D2R))
-                .lineTo(svg.compassRadius*math.cos(110*D2R), svg.compassRadius*math.sin(110*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(130*D2R), (svg.compassRadius-svg.compassL)*math.sin(130*D2R))
-                .lineTo(svg.compassRadius*math.cos(130*D2R), svg.compassRadius*math.sin(130*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(140*D2R), (svg.compassRadius-svg.compassL)*math.sin(140*D2R))
-                .lineTo(svg.compassRadius*math.cos(140*D2R), svg.compassRadius*math.sin(140*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(160*D2R), (svg.compassRadius-svg.compassL)*math.sin(160*D2R))
-                .lineTo(svg.compassRadius*math.cos(160*D2R), svg.compassRadius*math.sin(160*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(170*D2R), (svg.compassRadius-svg.compassL)*math.sin(170*D2R))
-                .lineTo(svg.compassRadius*math.cos(170*D2R), svg.compassRadius*math.sin(170*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(190*D2R), (svg.compassRadius-svg.compassL)*math.sin(190*D2R))
-                .lineTo(svg.compassRadius*math.cos(190*D2R), svg.compassRadius*math.sin(190*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(200*D2R), (svg.compassRadius-svg.compassL)*math.sin(200*D2R))
-                .lineTo(svg.compassRadius*math.cos(200*D2R), svg.compassRadius*math.sin(200*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(220*D2R), (svg.compassRadius-svg.compassL)*math.sin(220*D2R))
-                .lineTo(svg.compassRadius*math.cos(220*D2R), svg.compassRadius*math.sin(220*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(230*D2R), (svg.compassRadius-svg.compassL)*math.sin(230*D2R))
-                .lineTo(svg.compassRadius*math.cos(230*D2R), svg.compassRadius*math.sin(230*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(250*D2R), (svg.compassRadius-svg.compassL)*math.sin(250*D2R))
-                .lineTo(svg.compassRadius*math.cos(250*D2R), svg.compassRadius*math.sin(250*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(260*D2R), (svg.compassRadius-svg.compassL)*math.sin(260*D2R))
-                .lineTo(svg.compassRadius*math.cos(260*D2R), svg.compassRadius*math.sin(260*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(280*D2R), (svg.compassRadius-svg.compassL)*math.sin(280*D2R))
-                .lineTo(svg.compassRadius*math.cos(280*D2R), svg.compassRadius*math.sin(280*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(290*D2R), (svg.compassRadius-svg.compassL)*math.sin(290*D2R))
-                .lineTo(svg.compassRadius*math.cos(290*D2R), svg.compassRadius*math.sin(290*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(310*D2R), (svg.compassRadius-svg.compassL)*math.sin(310*D2R))
-                .lineTo(svg.compassRadius*math.cos(310*D2R), svg.compassRadius*math.sin(310*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(320*D2R), (svg.compassRadius-svg.compassL)*math.sin(320*D2R))
-                .lineTo(svg.compassRadius*math.cos(320*D2R), svg.compassRadius*math.sin(320*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(340*D2R), (svg.compassRadius-svg.compassL)*math.sin(340*D2R))
-                .lineTo(svg.compassRadius*math.cos(340*D2R), svg.compassRadius*math.sin(340*D2R))
-                .moveTo((svg.compassRadius-svg.compassL)*math.cos(350*D2R), (svg.compassRadius-svg.compassL)*math.sin(350*D2R))
-                .lineTo(svg.compassRadius*math.cos(350*D2R), svg.compassRadius*math.sin(350*D2R))
-                .setColor(0,1,0)
-                .setStrokeLineWidth(HSDlineWidth);
-        
-            
-        
-        
-#        svg.buttonView = svg.p_HSD.createChild("group")
-#            .setTranslation(276*0.795,482);
+
+        # Compass labels and tick marks generated in a loop
+        var compassLabels = [
+            [-90, "N"], [-60, "3"], [-30, "6"], [0, "E"],
+            [30, "12"], [60, "15"], [90, "S"], [120, "21"],
+            [150, "24"], [180, "W"], [210, "30"], [240, "33"],
+        ];
+        svg.compassTextElements = [];
+        foreach (var cl; compassLabels) {
+            append(svg.compassTextElements,
+                svg.p_HSDcompass.createChild("text")
+                    .setText(cl[1])
+                    .setAlignment("center-center")
+                    .setColor(0,1,0)
+                    .setTranslation(svg.compassRadius*math.cos(cl[0]*D2R), svg.compassRadius*math.sin(cl[0]*D2R))
+                    .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0));
+        }
+        svg.compassLines = svg.p_HSDcompass.createChild("path");
+        # Generate tick marks at every 10 degrees, skipping the 30-degree label positions
+        for (var deg = 0; deg < 360; deg += 10) {
+            if (math.mod(deg, 30) != 0) {
+                svg.compassLines
+                    .moveTo((svg.compassRadius-svg.compassL)*math.cos(deg*D2R), (svg.compassRadius-svg.compassL)*math.sin(deg*D2R))
+                    .lineTo(svg.compassRadius*math.cos(deg*D2R), svg.compassRadius*math.sin(deg*D2R));
+            }
+        }
+        svg.compassLines.setColor(0,1,0).setStrokeLineWidth(HSDlineWidth);
+
+        # Screen-space overlays at ownship position (radar cone, ownship symbol)
         svg.p_HSDmyPos = svg.p_HSD.createChild("group")
             .setTranslation(svg.myPos_x,svg.myPos_y).set("z-index",2);
         svg.cone = svg.p_HSDmyPos.createChild("group")
             .set("z-index",5);#radar cone
-        svg.legs = svg.p_HSDmyPos.createChild("group")
-            .set("z-index",3);
-        
 
+        # Route path on the map element - uses setDataGeo, rebuilt only when plan changes
+        svg.route_path = svg.sit_map.createChild("path")
+            .setColor(1,0.75,0)
+            .setStrokeLineWidth(HSDlineWidth)
+            .set("z-index",3);
+        svg.route_dirty = 1; # force initial build
+        svg.route_planSize = 0;
+        svg.route_currentWp = -1;
+        setlistener("autopilot/route-manager/signals/flightplan-changed", func {
+            svg.route_dirty = 1;
+        });
+
+        # Contact symbols on the map element - positioned with setGeoPosition
         svg.maxB = 21;#taken from VSD
         svg.blep = setsize([],svg.maxB);
         svg.ship = setsize([],svg.maxB);
         svg.blepText = setsize([],svg.maxB);
         for (var i = 0;i<svg.maxB;i+=1) {
-            svg.blep[i] = svg.p_HSDmyPos.createChild("path")
+            svg.blep[i] = svg.sit_map.createChild("path")
                     .moveTo(8,12)
                     .lineTo(0,0)
                     .lineTo(-8,12)
                     .lineTo(8,12)
                     .moveTo(0,0)
                     .vert(-12)
-                    .setColor(1,1,0) #yellow for now. Some are green (friendly), red (hostile), blue (fighter-link).
-                    .setStrokeLineWidth(HSDlineWidth)#on the image some are segmented, I guess thats for not detected by own radar, so making them full drawn.
+                    .setColor(1,1,0)
+                    .setStrokeLineWidth(HSDlineWidth)
                     .set("z-index",10)
                     .hide();
-            svg.ship[i] = svg.p_HSDmyPos.createChild("path")
+            svg.ship[i] = svg.sit_map.createChild("path")
                     .moveTo(-5,5)
                     .horiz(10)
                     .lineTo(7,0)
@@ -580,22 +498,24 @@ var MPCD_Device =
                     .vert(-4)
                     .horiz(8)
                     .vert(4)
-                    .setColor(1,1,0) #yellow for now. Some are green (friendly), red (hostile), blue (fighter-link).
+                    .setColor(1,1,0)
                     .setStrokeLineWidth(HSDlineWidth)
                     .set("z-index",10)
                     .hide();
-            svg.blepText[i] = svg.p_HSDmyPos.createChild("text")
+            svg.blepText[i] = svg.sit_map.createChild("text")
                 .setText("2F/23")
                 .setAlignment("center-top")
-                .setColor(1,1,0) #yellow for now. Some are green (friendly), red (hostile), blue (fighter-link).
+                .setColor(1,1,0)
                 .set("z-index",9)
                 .setFont(HSDfontFace).setFontSize(HSDblepFontSize, 1.0);
         }
+
+        # Steerpoint symbols on the map element - positioned with setGeoPosition
         svg.steerpointsMaxUsed = -1;
         svg.steerpoints = [];
         svg.steerpointsText = [];
 
-        svg.lock = svg.p_HSDmyPos.createChild("path")
+        svg.lock = svg.sit_map.createChild("path")
                 .moveTo(-12,-12)
                 .vert(24)
                 .moveTo(12,-12)
@@ -752,39 +672,34 @@ var MPCD_Device =
         me.p_HSD.root.showDIR = 1;
 
         me.p_HSD.update = func (noti) {
-            
+
             me.root.holeRange          = awg_9.range_radar2*1.75;
-            me.root.NM2PIXEL           = svg.holeHeight/me.root.holeRange;       
             me.i=0;
             me.root.lock.hide();
-            me.rdrRangePixels = awg_9.range_radar2*me.root.NM2PIXEL;
-            
+
+            # Update map position and range - the C++ map projection handles
+            # all lat/lon to screen-space conversion and heading-up rotation.
+            me.myHeading = getprop("orientation/heading-deg");
+            me.myPos = geo.aircraft_position();
+            me.root.sit_map.setPos(me.myPos.lat(), me.myPos.lon(), me.myHeading);
+            me.root.sit_map.setScreenRange(me.root.sit_map_screenRange);
+            me.root.sit_map.setRange(me.root.holeRange * 0.5);
+
             me.root.infoTime.setText(getprop("sim/time/gmt-string")~"Z");
             me.root.infoPq.setText("RPQ 15");
             me.root.infoRange.setText(""~awg_9.range_radar2);
-            
-            me.myHeading = getprop("orientation/heading-deg");
-            
+
+            # Compass rose (screen-space overlay, uses magnetic heading)
             if (me.root.showDIR) {
                 me.magn = getprop("orientation/heading-magnetic-deg")*D2R;
                 me.root.p_HSDcompass.setRotation(-me.magn);
-                me.root.c0.setRotation(me.magn);
-                me.root.c3.setRotation(me.magn);
-                me.root.c6.setRotation(me.magn);
-                me.root.c9.setRotation(me.magn);
-                me.root.c12.setRotation(me.magn);
-                me.root.c15.setRotation(me.magn);
-                me.root.c18.setRotation(me.magn);
-                me.root.c21.setRotation(me.magn);
-                me.root.c24.setRotation(me.magn);
-                me.root.c27.setRotation(me.magn);
-                me.root.c30.setRotation(me.magn);
-                me.root.c33.setRotation(me.magn);
+                foreach (var ce; me.root.compassTextElements)
+                    ce.setRotation(me.magn);
                 me.root.p_HSDcompass.show();
             } else {
                 me.root.p_HSDcompass.hide();
             }
-            
+
             me.w_s = getprop("sim/model/f15/controls/armament/weapon-selector");
             if (me.w_s == 0) {
                 me.root.infoArm.setText(sprintf("G%3dP",getprop("sim/model/f15/systems/gun/rounds")));
@@ -795,7 +710,10 @@ var MPCD_Device =
             } else if (me.w_s == 5) {
                 me.root.infoArm.setText(sprintf("G%d", getprop("sim/model/f15/systems/armament/agm/count")));
             }
+
+            # Radar cone (screen-space, sized to radar range in pixels)
             me.root.cone.removeAllChildren();
+            me.rdrRangePixels = awg_9.range_radar2 * (me.root.sit_map_screenRange / (me.root.holeRange * 0.5));
             if (getprop("sim/multiplay/generic/int[2]") != 1) {
                 me.radarX = me.rdrRangePixels*math.cos((90-120*0.5)*D2R);
                 me.radarY = -me.rdrRangePixels*math.sin((90-120*0.5)*D2R);#radar hardcoded to 120 deg scanwidth
@@ -804,88 +722,97 @@ var MPCD_Device =
                     .lineTo(me.radarX,me.radarY)
                     .moveTo(0,0)
                     .lineTo(-me.radarX,me.radarY)
-                    #.arcSmallCW(me.rdrRangePixels,me.rdrRangePixels, 0, me.radarX*2, 0)
                     .setStrokeLineWidth(HSDlineWidth)
                     .set("z-index",5)
-                    .setColor(0,1,0)# green
+                    .setColor(0,1,0)
                     .update();
             }
             me.root.cone.update();
+
+            # Route - only rebuild when the flightplan changes (revision check)
+            # Uses setDataGeo so the C++ map projection handles positioning.
             me.j = 0;
-            me.root.legs.removeAllChildren();
             if (getprop("autopilot/route-manager/active") and me.root.showRTE) {
                 me.plan = flightplan();
                 me.planSize = me.plan.getPlanSize();
-                me.prevX = nil;
-                me.prevY = nil;
-                for (me.j = 0; me.j < me.planSize;me.j+=1) {
-                    me.wp = me.plan.getWP(me.j);
-                    me.wpC = geo.Coord.new();
-                    me.wpC.set_latlon(me.wp.lat,me.wp.lon);
-                    me.legBearing = geo.aircraft_position().course_to(me.wpC)-me.myHeading;#relative
-                    me.legDistance = geo.aircraft_position().distance_to(me.wpC)*M2NM;
-                    me.legRangePixels = me.legDistance*me.root.NM2PIXEL;
-                    
-                    me.legX = me.legRangePixels*math.sin(me.legBearing*D2R);
-                    me.legY = -me.legRangePixels*math.cos(me.legBearing*D2R);
-                    if (me.j > me.root.steerpointsMaxUsed) {
-                        me.root.steerpointsMaxUsed += 1;
-                        append(me.root.steerpoints, me.root.p_HSDmyPos.createChild("group").set("z-index",4));
-                        me.root.steerpoints[me.j].createChild("path")
-                            .moveTo(20,10)
-                            .horiz(-40)
-                            .lineTo(0,-20)
-                            .setStrokeLineWidth(HSDlineWidth)
-                            .set("z-index",4)
-                            .setColor(1,0.75,0)#orange
-                            .setColorFill(0,0,0);
-                        append(me.root.steerpointsText, me.root.steerpoints[me.j].createChild("text")
-                            .setText(""~me.j)
-                            .setAlignment("left-center")
-                            .setColor(1,0.75,0)
-                            #.setFont(??)
-                            .set("z-index",5)
-                            .setTranslation(-4,0)
-                            .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0));
-                    }
-                    me.root.steerpoints[me.j].setTranslation(me.legX,me.legY);
-                    me.root.steerpointsText[me.j].setVisible(me.plan.current != me.j);
 
-                    if (me.prevX != nil) {
-                        me.root.legs.createChild("path")
-                            .moveTo(me.legX,me.legY)
-                            .lineTo(me.prevX,me.prevY)
-                            .setStrokeLineWidth(HSDlineWidth)
-                            .setColor(1,0.75,0)#orange
-                            .update();
+                # Rebuild route path and steerpoints only when flightplan changes
+                if (me.root.route_dirty) {
+                    me.root.route_dirty = 0;
+                    me.root.route_path.reset();
+                    var cmds = [];
+                    var coords = [];
+                    for (var ri = 0; ri < me.planSize; ri += 1) {
+                        me.wp = me.plan.getWP(ri);
+                        append(cmds, ri == 0 ? canvas.Path.VG_MOVE_TO : canvas.Path.VG_LINE_TO);
+                        append(coords, "N" ~ me.wp.lat);
+                        append(coords, "E" ~ me.wp.lon);
+
+                        # Create steerpoint symbol if needed
+                        if (ri > me.root.steerpointsMaxUsed) {
+                            me.root.steerpointsMaxUsed += 1;
+                            append(me.root.steerpoints, me.root.sit_map.createChild("group").set("z-index",4));
+                            me.root.steerpoints[ri].createChild("path")
+                                .moveTo(20,10)
+                                .horiz(-40)
+                                .lineTo(0,-20)
+                                .lineTo(20,10)
+                                .setStrokeLineWidth(HSDlineWidth)
+                                .set("z-index",4)
+                                .setColor(1,0.75,0)#orange
+                                .setColorFill(0,0,0);
+                            append(me.root.steerpointsText, me.root.steerpoints[ri].createChild("text")
+                                .setText(""~ri)
+                                .setAlignment("left-center")
+                                .setColor(1,0.75,0)
+                                .set("z-index",5)
+                                .setTranslation(-4,0)
+                                .setFont(HSDfontFace).setFontSize(HSDfontSize, 1.0));
+                        }
+                        me.root.steerpoints[ri].setGeoPosition(me.wp.lat, me.wp.lon);
+                        me.root.steerpoints[ri].show();
                     }
-                    me.prevX = me.legX;
-                    me.prevY = me.legY;
+                    me.root.route_path.setDataGeo(cmds, coords);
+                    me.root.route_planSize = me.planSize;
+
+                    # Hide steerpoints beyond current plan size
+                    for (var hi = me.planSize; hi <= me.root.steerpointsMaxUsed; hi += 1)
+                        me.root.steerpoints[hi].hide();
                 }
+
+                me.root.route_path.show();
+                me.j = me.root.route_planSize;
+
+                # Only update current waypoint highlight per frame
+                if (me.plan.current != me.root.route_currentWp) {
+                    me.root.route_currentWp = me.plan.current;
+                    for (var wi = 0; wi < me.root.route_planSize; wi += 1)
+                        me.root.steerpointsText[wi].setVisible(me.root.route_currentWp != wi);
+                }
+            } else {
+                me.root.route_path.hide();
             }
             for (;me.j<=me.root.steerpointsMaxUsed; me.j += 1) {
                 me.root.steerpoints[me.j].hide();
             }
 
+            # Contacts - positioned with setGeoPosition, rotation is true heading
+            # The map element handles the heading-up projection.
             me.foundLock = 0;
-            
+
             foreach(contact; awg_9.tgts_list) {
                 if (contact.get_display() == 0) {
                     continue;
                 }
-                me.distPixels = contact.get_range()*me.root.NM2PIXEL;
-                
-                me.relBearing = contact.get_deviation(me.myHeading);
-                
-                me.rot = contact.get_heading();
-                me.rot -= me.myHeading;                
-                
-                
+                me.contactCoord = contact.get_Coord();
+                me.contactLat = me.contactCoord.lat();
+                me.contactLon = me.contactCoord.lon();
+
                 if (contact.get_model()!=nil and me.root.samLookup[contact.get_model()] != nil) {
                     me.root.blep[me.i].hide();
                     me.root.ship[me.i].hide();
                     if (me.root.showSAM) {
-                        me.root.blepText[me.i].setTranslation(me.distPixels*math.sin(me.relBearing*D2R),-me.distPixels*math.cos(me.relBearing*D2R));
+                        me.root.blepText[me.i].setGeoPosition(me.contactLat, me.contactLon);
                         me.root.blepText[me.i].setText(sprintf("%s", me.root.samLookup[contact.get_model()]));
                         me.root.blepText[me.i].show();
                     } else {
@@ -895,9 +822,8 @@ var MPCD_Device =
                     if (contact.get_model()!=nil and me.root.shipLookup[contact.get_model()] != nil) {
                         me.root.blep[me.i].hide();
                         me.root.blepText[me.i].hide();
-                        me.root.blep[me.i].hide();
                         if (me.root.showSHP) {
-                            me.root.ship[me.i].setTranslation(me.distPixels*math.sin(me.relBearing*D2R),-me.distPixels*math.cos(me.relBearing*D2R));
+                            me.root.ship[me.i].setGeoPosition(me.contactLat, me.contactLon);
                             me.root.ship[me.i].show();
                         } else {
                             me.root.ship[me.i].hide();
@@ -905,16 +831,15 @@ var MPCD_Device =
                     } else {
                         if (me.root.showTGT) {
                             me.root.ship[me.i].hide();
-                            me.root.blep[me.i].setTranslation(me.distPixels*math.sin(me.relBearing*D2R),-me.distPixels*math.cos(me.relBearing*D2R));
-                            me.root.blep[me.i].setRotation(me.rot*D2R);
+                            me.root.blep[me.i].setGeoPosition(me.contactLat, me.contactLon);
+                            me.root.blep[me.i].setRotation(contact.get_heading()*D2R);
                             me.root.blep[me.i].show();
-                            me.root.blep[me.i].update();
                             if (me.root.showDAT) {
                                 me.datType = "";
                                 if (contact.get_model()!=nil and me.root.typeLookup[contact.get_model()] != nil) {
                                     me.datType = me.root.typeLookup[contact.get_model()]~"/";
                                 }
-                                me.root.blepText[me.i].setTranslation(me.distPixels*math.sin(me.relBearing*D2R),-me.distPixels*math.cos(me.relBearing*D2R)+12);
+                                me.root.blepText[me.i].setGeoPosition(me.contactLat, me.contactLon);
                                 me.root.blepText[me.i].setText(sprintf("%s%02d", me.datType,contact.get_altitude()*0.001));
                                 me.root.blepText[me.i].show();
                             } else {
@@ -929,14 +854,8 @@ var MPCD_Device =
                 }
                 if (contact==awg_9.active_u or (awg_9.active_u != nil and contact.get_Callsign() == awg_9.active_u.get_Callsign() and contact.ModelType==awg_9.active_u.ModelType)) {
                     me.foundLock = 1;
-                    #can happen in transition between TWS to RWS
-                    #me.root.lock.hide();
-                    #me.root.lockAlt = me.lockAlt;
-                    #me.lockInfo = sprintf("%4d   %+4d", contact.get_Speed(), contact.get_closure_rate());
-                    me.root.lock.setTranslation(me.distPixels*math.sin(me.relBearing*D2R),-me.distPixels*math.cos(me.relBearing*D2R));
-                    #me.cs = contact.get_Callsign();
+                    me.root.lock.setGeoPosition(me.contactLat, me.contactLon);
                     me.root.lock.show();
-                    me.root.lock.update();
                     me.datType = "";
                     if (contact.get_model()!=nil and me.root.typeLookup[contact.get_model()] != nil) {
                         me.datType = me.root.typeLookup[contact.get_model()]~"/";
@@ -947,6 +866,7 @@ var MPCD_Device =
                     }
                     me.root.infoTgt.setText(me.datType~me.modelType);
                     me.root.infoPos.setText(sprintf("%dK G%d",contact.get_altitude()*0.001,contact.get_Speed()));
+                    me.relBearing = contact.get_deviation(me.myHeading);
                     me.root.infoBer.setText(sprintf("TN 00%03d",geo.normdeg(me.relBearing)));
                     me.root.infoTgt.show();
                     me.root.infoPos.show();
@@ -957,7 +877,7 @@ var MPCD_Device =
                     break;
                 }
             }
-            
+
             for (;me.i<me.root.maxB;me.i+=1) {
                 me.root.ship[me.i].hide();
                 me.root.blep[me.i].hide();
@@ -969,6 +889,9 @@ var MPCD_Device =
                 me.root.infoPos.hide();
                 me.root.infoBer.hide();
             }
+
+            # Tell the map to apply updated geo positions
+            me.root.sit_map.setBool("update", 1);
         };
         me.p_HSD.notifyButton = func (eventi) {
             if (eventi != nil) {
