@@ -17,10 +17,11 @@
 
   <output name="autotest/output/fcs-ari.csv" type="CSV" rate="10">
     <property> simulation/sim-time-sec </property>
-    <property> fcs/ari/mechanical-demand-norm </property>
-    <property> fcs/ari/mechanical-output-norm </property>
-    <property> fcs/ari/cas-demand-norm </property>
-    <property> fcs/ari/cas-output-norm </property>
+    <property> fcs/ari/mechanical-demand-deg </property>
+    <property> fcs/ari/mechanical-output-deg </property>
+    <property> fcs/ari/cas-demand-deg </property>
+    <property> fcs/ari/cas-output-deg </property>
+    <property> fcs/ari/roll-rate-factor </property>
     <property> fcs/yaw-mix/output-deg </property>
     <property> velocities/mach </property>
     <property> fcs/aileron-cmd-norm </property>
@@ -54,14 +55,14 @@
     <event name="Baseline ARI">
       <condition> simulation/sim-time-sec ge 3.0 </condition>
       <notify>
-        <property>fcs/ari/mechanical-demand-norm</property>
-        <property>fcs/ari/mechanical-output-norm</property>
-        <property>fcs/ari/cas-demand-norm</property>
-        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/ari/mechanical-demand-deg</property>
+        <property>fcs/ari/mechanical-output-deg</property>
+        <property>fcs/ari/cas-demand-deg</property>
+        <property>fcs/ari/cas-output-deg</property>
         <property>fcs/yaw-mix/output-deg</property>
         <property>velocities/mach</property>
-        <check property="fcs/ari/mechanical-output-norm" value="0" tol_abs="0.01" message="Mechanical ARI near zero with no roll input"/>
-        <check property="fcs/ari/cas-output-norm" value="0" tol_abs="0.01" message="CAS ARI near zero with no roll input"/>
+        <check property="fcs/ari/mechanical-output-deg" value="0" tol_abs="0.01" message="Mechanical ARI near zero with no roll input"/>
+        <check property="fcs/ari/cas-output-deg" value="0" tol_abs="0.01" message="CAS ARI near zero with no roll input"/>
       </notify>
     </event>
 
@@ -81,11 +82,11 @@
       <notify>
         <property>fcs/aileron-cmd-scheduled</property>
         <property>fcs/elevator-pos-deg</property>
-        <property>fcs/ari/mechanical-demand-norm</property>
-        <property>fcs/ari/mechanical-output-norm</property>
+        <property>fcs/ari/mechanical-demand-deg</property>
+        <property>fcs/ari/mechanical-output-deg</property>
         <property>fcs/sensor/aoa-deg</property>
-        <property>fcs/ari/cas-demand-norm</property>
-        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/ari/cas-demand-deg</property>
+        <property>fcs/ari/cas-output-deg</property>
         <property>fcs/yaw-mix/output-deg</property>
       </notify>
     </event>
@@ -103,10 +104,10 @@
       <condition> simulation/sim-time-sec ge 8.5 </condition>
       <notify>
         <property>fcs/elevator-pos-deg</property>
-        <property>fcs/ari/mechanical-demand-norm</property>
-        <property>fcs/ari/mechanical-output-norm</property>
-        <property>fcs/ari/cas-demand-norm</property>
-        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/ari/mechanical-demand-deg</property>
+        <property>fcs/ari/mechanical-output-deg</property>
+        <property>fcs/ari/cas-demand-deg</property>
+        <property>fcs/ari/cas-output-deg</property>
       </notify>
     </event>
 
@@ -123,9 +124,9 @@
     <event name="Check CAS ARI zeroed, mechanical still active">
       <condition> simulation/sim-time-sec ge 11.5 </condition>
       <notify>
-        <property>fcs/ari/mechanical-output-norm</property>
-        <property>fcs/ari/cas-output-norm</property>
-        <check property="fcs/ari/cas-output-norm" value="0" tol_abs="0.01" message="CAS ARI zeroed with yaw CAS disabled"/>
+        <property>fcs/ari/mechanical-output-deg</property>
+        <property>fcs/ari/cas-output-deg</property>
+        <check property="fcs/ari/cas-output-deg" value="0" tol_abs="0.01" message="CAS ARI zeroed with yaw CAS disabled"/>
       </notify>
     </event>
 
@@ -134,8 +135,8 @@
       <condition> simulation/sim-time-sec ge 14.0 </condition>
       <set name="fcs/aileron-cmd-norm" value="0.0"/>
       <notify>
-        <property>fcs/ari/mechanical-output-norm</property>
-        <property>fcs/ari/cas-output-norm</property>
+        <property>fcs/ari/mechanical-output-deg</property>
+        <property>fcs/ari/cas-output-deg</property>
       </notify>
     </event>
 

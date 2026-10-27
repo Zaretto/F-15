@@ -1,0 +1,367 @@
+<?xml version="1.0"?>
+<validation-tolerances>
+
+  <!-- ================================================================== -->
+  <!-- Global Tolerance Rules                                              -->
+  <!--                                                                     -->
+  <!-- Applied to all tests unless overridden by per-test <property>.      -->
+  <!-- Rules are evaluated in order; first match wins.                     -->
+  <!-- Pattern syntax: fnmatch-style (* matches any substring).            -->
+  <!-- ================================================================== -->
+
+  <global-tolerances>
+
+    <!-- Electrical boolean / status signals -->
+    <tolerance match="systems/electrics/*-status"      tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-online"      tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-powered"     tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-active"      tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-failed"      tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-closed"      tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-mode"        tol_abs="0.01"/>
+    <tolerance match="systems/electrics/ground-power"  tol_abs="0.01"/>
+    <tolerance match="systems/electrics/ground-power-available" tol_abs="0.01"/>
+    <tolerance match="systems/electrics/jfs-pmg-power" tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-serviceable" tol_abs="0.01"/>
+    <tolerance match="systems/electrics/*-light"       tol_abs="0.01"/>
+
+    <!-- Hydraulic boolean signals -->
+    <tolerance match="systems/hydraulics/jfs-util-feedin"  tol_abs="0.01"/>
+    <tolerance match="systems/hydraulics/emerg-gen"        tol_abs="0.01"/>
+    <tolerance match="systems/hydraulics/normal-pressure"  tol_abs="0.01"/>
+
+    <!-- Propulsion boolean signals -->
+    <tolerance match="propulsion/jfs-running"              tol_abs="0.01"/>
+    <tolerance match="propulsion/set-running"              tol_abs="0.01"/>
+    <tolerance match="propulsion/engine*/set-running"      tol_abs="0.01"/>
+    <tolerance match="propulsion/cutoff_cmd"               tol_abs="0.01"/>
+    <tolerance match="propulsion/engine*/augmentation-alight" tol_abs="0.01"/>
+    <tolerance match="propulsion/gg/engine*/augmentation-on"  tol_abs="0.01"/>
+    <tolerance match="propulsion/gg/engine*/nozzle-choked" tol_abs="0.01"/>
+
+    <!-- FCS boolean signals -->
+    <tolerance match="fcs/cas-*-enable"                    tol_abs="0.01"/>
+    <tolerance match="fcs/departure-cas-shutdown"          tol_abs="0.01"/>
+    <tolerance match="fcs/departure/spin-recovery"         tol_abs="0.01"/>
+    <tolerance match="fcs/pitch-damper-active"             tol_abs="0.01"/>
+
+    <!-- ECS boolean signals -->
+    <tolerance match="systems/ecs/pressurisation-active"   tol_abs="0.01"/>
+    <tolerance match="systems/ecs/canopy-position-dmd"     tol_abs="0.01"/>
+    <tolerance match="systems/ecs/windshield-heat"         tol_abs="0.01"/>
+    <tolerance match="systems/ecs/windscreen-heat-active"  tol_abs="0.01"/>
+    <tolerance match="systems/ecs/oxygen-supply-mode"      tol_abs="0.01"/>
+    <tolerance match="systems/ecs/liquid-oxygen-activated"  tol_abs="0.01"/>
+    <tolerance match="systems/ecs/oxygen-qty-test"         tol_abs="0.01"/>
+
+    <!-- Throttle / command norms -->
+    <tolerance match="fcs/throttle-cmd-norm*" tol_abs="0.01"/>
+    <tolerance match="gear/gear-cmd-norm"     tol_abs="0.01"/>
+
+    <!-- Electrical: AC buses ~115V -->
+    <tolerance match="systems/electrics/ac-*-bus" tol_abs="2.0" tol_rel="0.02"/>
+    <!-- Electrical: DC buses ~28V -->
+    <tolerance match="systems/electrics/dc-*-bus" tol_abs="0.5" tol_rel="0.02"/>
+    <tolerance match="systems/electrics/emerg-ess-dc-bus" tol_abs="0.5" tol_rel="0.02"/>
+    <!-- Generator kVA -->
+    <tolerance match="systems/electrics/*generator-kva" tol_abs="1.0" tol_rel="0.02"/>
+
+    <!-- Hydraulic PSI -->
+    <tolerance match="systems/hydraulics/*-psi" tol_abs="50" tol_rel="0.02"/>
+    <!-- Hydraulic pressure booleans -->
+    <tolerance match="systems/hydraulics/*-pressure" tol_abs="0.01"/>
+    <!-- Hydraulic bleed / rate -->
+    <tolerance match="systems/hydraulics/*-bleed*" tol_abs="20" tol_rel="0.05"/>
+    <tolerance match="systems/hydraulics/*-rate*"  tol_abs="20" tol_rel="0.05"/>
+
+    <!-- Engine N1 / N2 -->
+    <tolerance match="propulsion/engine*/n1" tol_abs="1.0" tol_rel="0.02"/>
+    <tolerance match="propulsion/engine*/n2" tol_abs="1.0" tol_rel="0.02"/>
+    <!-- Engine thrust -->
+    <tolerance match="propulsion/engine*/thrust-lbs" tol_abs="100" tol_rel="0.02"/>
+    <!-- Fuel flow -->
+    <tolerance match="propulsion/engine*/fuel-flow-rate-pps" tol_abs="0.1" tol_rel="0.02"/>
+
+    <!-- Gas generator ambient -->
+    <tolerance match="propulsion/gg/ambient/T0-K" tol_abs="1.0"/>
+    <tolerance match="propulsion/gg/ambient/P0-Pa" tol_abs="100"/>
+
+    <!-- Gas generator corrected speeds -->
+    <tolerance match="propulsion/gg/engine*/NL-corr-frac" tol_abs="0.01" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/NH-corr-frac" tol_abs="0.01" tol_rel="0.02"/>
+
+    <!-- Gas generator pressure ratios -->
+    <tolerance match="propulsion/gg/engine*/PR-fan-tip"   tol_abs="0.05" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/PR-fan-hub"   tol_abs="0.05" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/PR-comp"      tol_abs="0.1"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/PR-HPT"       tol_abs="0.05" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/PR-LPT"       tol_abs="0.05" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/OPR"          tol_abs="0.2"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/NPR"          tol_abs="0.05" tol_rel="0.02"/>
+
+    <!-- Gas generator mass flows (kg/s) — Wf before generic *-kgps -->
+    <tolerance match="propulsion/gg/engine*/Wf-kgps"      tol_abs="0.01" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/W-BL*-kgps"   tol_abs="0.1"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/*-kgps"       tol_abs="0.5"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/FAR-core"     tol_abs="0.001" tol_rel="0.02"/>
+
+    <!-- Gas generator AB parameters -->
+    <tolerance match="propulsion/gg/engine*/AB-FAR"       tol_abs="0.002" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/AB-eta-frac"  tol_abs="0.01" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T7-frac-des"  tol_abs="0.02" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/nozzle-area-reduction" tol_abs="0.01" tol_rel="0.02"/>
+
+    <!-- Gas generator temperatures K (by station) -->
+    <tolerance match="propulsion/gg/engine*/T2-K"         tol_abs="2.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T21-K"        tol_abs="3.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T22-K"        tol_abs="3.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T3-K"         tol_abs="5.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T4-K"         tol_abs="10.0" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T4-target-K"  tol_abs="10.0" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T41-K"        tol_abs="10.0" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T45-K"        tol_abs="8.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T6-K"         tol_abs="8.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/T7-K"         tol_abs="8.0"  tol_rel="0.02"/>
+    <!-- Gas generator temperatures R -->
+    <tolerance match="propulsion/gg/engine*/EGT-R"        tol_abs="10.0" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/FTIT-R"       tol_abs="10.0" tol_rel="0.02"/>
+
+    <!-- Gas generator pressures Pa (by station) -->
+    <tolerance match="propulsion/gg/engine*/P2-Pa"        tol_abs="500"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P22-Pa"       tol_abs="1000" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P3-Pa"        tol_abs="2000" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P4-Pa"        tol_abs="2000" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P41-Pa"       tol_abs="1000" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P45-Pa"       tol_abs="500"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P6-Pa"        tol_abs="500"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P7-Pa"        tol_abs="500"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/P8-Pa"        tol_abs="500"  tol_rel="0.02"/>
+
+    <!-- Gas generator nozzle / velocity -->
+    <tolerance match="propulsion/gg/engine*/Cd-nozzle"    tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/A8-m2"        tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/V8-mps"       tol_abs="5.0"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/V0-mps"       tol_abs="5.0"  tol_rel="0.02"/>
+
+    <!-- Gas generator thrust (N and lbf) -->
+    <tolerance match="propulsion/gg/engine*/FG-N"         tol_abs="200"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/ram-drag-N"   tol_abs="200"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/FN-N"         tol_abs="200"  tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/FN-lbf"       tol_abs="50"   tol_rel="0.02"/>
+    <tolerance match="external_reactions/gg-thrust-*"     tol_abs="50"   tol_rel="0.02"/>
+
+    <!-- Gas generator inlet parameters -->
+    <tolerance match="propulsion/gg/engine*/theta1"       tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/theta2"       tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/delta2"       tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/Pt-ratio"     tol_abs="0.01" tol_rel="0.02"/>
+    <tolerance match="propulsion/gg/engine*/eta-inlet"    tol_abs="0.005" tol_rel="0.02"/>
+
+    <!-- Atmosphere -->
+    <tolerance match="atmosphere/T-R"     tol_abs="2.0"  tol_rel="0.01"/>
+    <tolerance match="atmosphere/P-psf"   tol_abs="10"   tol_rel="0.02"/>
+    <tolerance match="atmosphere/rho-slugs_ft3" tol_abs="1e-4" tol_rel="0.02"/>
+
+    <!-- Flight state -->
+    <tolerance match="position/h-sl-ft"   tol_abs="200"  tol_rel="0.02"/>
+    <tolerance match="velocities/mach"    tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="velocities/vc-kts"  tol_abs="3.0"  tol_rel="0.02"/>
+    <tolerance match="velocities/vt-fps"  tol_abs="5.0"  tol_rel="0.02"/>
+
+    <!-- Aerodynamic angles -->
+    <tolerance match="aero/alpha-deg"     tol_abs="0.5"  tol_rel="0.05"/>
+    <tolerance match="aero/beta-deg"      tol_abs="0.5"/>
+    <tolerance match="aero/qbar-psf"      tol_abs="5.0"  tol_rel="0.02"/>
+    <tolerance match="attitude/theta-deg" tol_abs="0.5"  tol_rel="0.05"/>
+
+    <!-- Aerodynamic rates -->
+    <tolerance match="velocities/q-aero-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+    <tolerance match="velocities/p-aero-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+    <tolerance match="velocities/r-aero-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+
+    <!-- Aerodynamic coefficients -->
+    <tolerance match="aero/coefficients/*" tol_abs="0.01" tol_rel="0.05"/>
+    <tolerance match="aero/c/*"           tol_abs="0.01" tol_rel="0.05"/>
+
+    <!-- Forces and moments -->
+    <tolerance match="forces/fb*-total-lbs" tol_abs="100" tol_rel="0.05"/>
+    <tolerance match="moments/*-total-lbsft" tol_abs="500" tol_rel="0.05"/>
+    <tolerance match="accelerations/Nz"   tol_abs="0.05" tol_rel="0.05"/>
+
+    <!-- Inertia -->
+    <tolerance match="inertia/cg-x-mac-percent" tol_abs="0.5" tol_rel="0.02"/>
+
+    <!-- FCS command norms -->
+    <tolerance match="fcs/elevator-cmd-norm" tol_abs="0.02"/>
+    <tolerance match="fcs/aileron-cmd-norm"  tol_abs="0.02"/>
+    <tolerance match="fcs/rudder-cmd-norm"   tol_abs="0.02"/>
+
+    <!-- FCS surface positions (deg) -->
+    <tolerance match="fcs/elevator-pos-deg"  tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/elevator-pos-rad"  tol_abs="0.01" tol_rel="0.05"/>
+    <tolerance match="fcs/elevator-pos-norm" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/aileron-pos-deg"   tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/aileron-pos-rad"   tol_abs="0.01" tol_rel="0.05"/>
+    <tolerance match="fcs/aileron-pos-norm"  tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/rudder-pos-deg"    tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/rudder-pos-norm"   tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS differential elevator -->
+    <tolerance match="fcs/differential-elevator-*" tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/elevator-*-pos-norm" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/*-aileron-pos-*" tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS flap -->
+    <tolerance match="fcs/flap-pos-norm"  tol_abs="0.02"/>
+    <tolerance match="gear/gear-position-norm" tol_abs="0.02"/>
+    <tolerance match="/canopy/position-norm" tol_abs="0.02"/>
+
+    <!-- FCS CAS internal signals (small angular values) -->
+    <tolerance match="fcs/pitch-cas/*-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+    <tolerance match="fcs/pitch-cas/*-deg" tol_abs="0.2" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-cas/*-deg_sec" tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-cas/*-deg" tol_abs="0.2" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-cas/*-norm" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-cas/aoa-authority" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-cas/*-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-cas/*-deg"  tol_abs="0.2" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-cas/*-norm" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-cas/rate-feedback" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-cas/aoa-crossfeed" tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS PTC -->
+    <tolerance match="fcs/ptc/*-g"        tol_abs="0.05" tol_rel="0.05"/>
+    <tolerance match="fcs/ptc/*-norm"     tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/ptc/*-deg"      tol_abs="0.2"  tol_rel="0.05"/>
+    <tolerance match="fcs/ptc/error-scaled" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/ptc/cas-interconnect" tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/pitch-trim-compensation" tol_abs="0.2" tol_rel="0.05"/>
+
+    <!-- FCS sensors -->
+    <tolerance match="fcs/sensor/*-rad_sec" tol_abs="0.005" tol_rel="0.05"/>
+    <tolerance match="fcs/sensor/aoa-deg" tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/sensor/nz-g"    tol_abs="0.05" tol_rel="0.05"/>
+    <tolerance match="fcs/sensor/yaw-rate-deg_sec" tol_abs="0.3" tol_rel="0.05"/>
+
+    <!-- FCS mechanical path -->
+    <tolerance match="fcs/pitch-stick-*"  tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/pitch-ratio*"   tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-ratio*"    tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/aileron-cmd-*"  tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS engineering units properties (inch/degree domain) -->
+    <tolerance match="fcs/pitch-stick-in"              tol_abs="0.1"/>
+    <tolerance match="fcs/pitch-stick-adjusted-in"     tol_abs="0.1"/>
+    <tolerance match="fcs/roll-stick-in"               tol_abs="0.1"/>
+    <tolerance match="fcs/pitch-mix/output-deg"        tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/pitch-mix/sum-deg"           tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-mix/output-deg"          tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/actuator/pitch-output-deg"   tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/actuator/yaw-output-deg"     tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/actuator/roll-cas-output-deg" tol_abs="0.5"/>
+    <tolerance match="fcs/diff-stab-total-deg"         tol_abs="0.5"/>
+    <tolerance match="fcs/ptc/total-compensation-deg"  tol_abs="1.0"  tol_rel="0.05"/>
+    <tolerance match="fcs/stall-inhibitor/output-deg"  tol_abs="0.5"/>
+
+    <!-- FCS mix / actuator outputs (normalized path) -->
+    <tolerance match="fcs/pitch-mix/*"    tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/roll-mix/*"     tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/yaw-mix/*"      tol_abs="0.02" tol_rel="0.05"/>
+    <tolerance match="fcs/actuator/*"     tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS departure protection -->
+    <tolerance match="fcs/departure/*-deg_sec" tol_abs="0.5" tol_rel="0.05"/>
+    <tolerance match="fcs/departure/*-factor" tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS stall inhibitor -->
+    <tolerance match="fcs/stall-inhibitor/*" tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS ARI -->
+    <tolerance match="fcs/ari/*-norm"     tol_abs="0.02" tol_rel="0.05"/>
+
+    <!-- FCS output scaling -->
+    <tolerance match="fcs/gun-weight-stab-bias-deg" tol_abs="0.2" tol_rel="0.05"/>
+
+    <!-- ECS temperatures -->
+    <tolerance match="systems/ecs/cockpit-*-coeff" tol_abs="0.005" tol_rel="0.02"/>
+    <tolerance match="systems/ecs/cockpit-temperature-k" tol_abs="3.0" tol_rel="0.02"/>
+    <tolerance match="systems/ecs/windscreen-oat-k" tol_abs="2.0" tol_rel="0.02"/>
+    <tolerance match="systems/ecs/windscreen-temperature-k" tol_abs="3.0" tol_rel="0.02"/>
+    <tolerance match="systems/ecs/cabin-altitude-ft*" tol_abs="200" tol_rel="0.05"/>
+
+    <!-- ECS oxygen -->
+    <tolerance match="systems/ecs/oxygen-pressure-psi" tol_abs="5.0" tol_rel="0.02"/>
+    <tolerance match="systems/ecs/oxygen-quantity-liters*" tol_abs="0.2" tol_rel="0.02"/>
+
+    <default tol_abs="1e-3" tol_rel="0.01"/>
+  </global-tolerances>
+
+
+  <!-- ================================================================== -->
+  <!-- Per-Test Tolerance Overrides                                       -->
+  <!--                                                                    -->
+  <!-- Only tests needing property-level tolerance overrides appear here. -->
+  <!-- Tests using only global tolerances need no entry.                  -->
+  <!-- Test definitions (scripts, descriptions) are in autotest.xml.      -->
+  <!-- ================================================================== -->
+
+  <!-- Gas Generator Tests -->
+
+  <test name="gasgen-sls-idle">
+    <output-file baseline="gasgen-sls-idle.csv">
+      <!-- Override: SLS idle has near-zero inlet velocity and ram drag -->
+      <property name="propulsion/gg/engine[0]/V0-mps"       tol_abs="1.0"/>
+      <property name="propulsion/gg/engine[0]/ram-drag-N"   tol_abs="50"  tol_rel="0.02"/>
+    </output-file>
+  </test>
+
+  <test name="gasgen-sls-mil">
+    <output-file baseline="gasgen-sls-mil.csv">
+      <!-- Override: SLS mil has near-zero ram drag -->
+      <property name="propulsion/gg/engine[0]/ram-drag-N"   tol_abs="50"  tol_rel="0.02"/>
+    </output-file>
+  </test>
+
+  <test name="gasgen-sls-maxab">
+    <output-file baseline="gasgen-sls-maxab.csv">
+      <!-- Overrides: AB thrust is higher, T7 higher in AB, fuel flow higher -->
+      <property name="propulsion/engine[0]/fuel-flow-rate-pps" tol_abs="0.2" tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[0]/T7-K"            tol_abs="15.0" tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[0]/FG-N"            tol_abs="500" tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[0]/ram-drag-N"      tol_abs="50"  tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[0]/FN-N"            tol_abs="500" tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[0]/FN-lbf"          tol_abs="100" tol_rel="0.02"/>
+      <property name="propulsion/gg/engine[1]/FN-lbf"          tol_abs="100" tol_rel="0.02"/>
+      <property name="external_reactions/gg-thrust-L"          tol_abs="100" tol_rel="0.02"/>
+      <property name="external_reactions/gg-thrust-R"          tol_abs="100" tol_rel="0.02"/>
+    </output-file>
+  </test>
+
+  <!-- ECS Tests -->
+
+  <test name="ecs-windscreen-heating">
+    <output-file baseline="ecs-windscreen-heating.csv">
+      <!-- Override: heater power and temp difference need wider tolerance -->
+      <property name="systems/ecs/windscreen-heater-power-watts" tol_abs="20" tol_rel="0.05"/>
+      <property name="systems/ecs/windscreen-temperature-difference-k" tol_abs="2.0" tol_rel="0.05"/>
+    </output-file>
+  </test>
+
+  <test name="ecs-pressurisation">
+    <output-file baseline="ecs-pressurisation.csv">
+      <!-- Override: scheduled pressure needs wider tolerance -->
+      <property name="systems/ecs/scheduled-pressure" tol_abs="0.1" tol_rel="0.05"/>
+    </output-file>
+  </test>
+
+  <!-- FCS Tests -->
+
+  <test name="fcs-roll-channel-diagnostic">
+    <output-file baseline="fcs-roll-channel-diagnostic.csv">
+      <!-- Override: aileron-cmd-norm-trimmed is a roll-channel-specific property -->
+      <property name="fcs/aileron-cmd-norm-trimmed"  tol_abs="0.02" tol_rel="0.05"/>
+      <property name="fcs/roll-cas/output-deg"       tol_abs="0.2"  tol_rel="0.05"/>
+    </output-file>
+  </test>
+
+</validation-tolerances>

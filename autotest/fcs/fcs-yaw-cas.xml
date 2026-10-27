@@ -20,15 +20,14 @@
     <property> simulation/sim-time-sec </property>
     <property> fcs/cas-yaw-enable </property>
     <property> fcs/sensor/yaw-rate-rad_sec </property>
-    <property> fcs/yaw-cas/notch-rad_sec </property>
-    <property> fcs/yaw-cas/rate-washout-rad_sec </property>
-    <property> fcs/yaw-cas/rate-feedback </property>
-    <property> fcs/yaw-cas/aoa-crossfeed </property>
-    <property> fcs/yaw-cas/feedback-sum-deg </property>
-    <property> fcs/yaw-cas/proportional-deg </property>
+    <property> fcs/yaw-cas/rate-highpass-rad_sec </property>
+    <property> fcs/yaw-cas/accel-rate-gained </property>
+    <property> fcs/yaw-cas/crossfeed-product </property>
+    <property> fcs/yaw-cas/feedback-deg </property>
+    <property> fcs/yaw-cas/damper-output-deg </property>
     <property> fcs/yaw-cas/integrator-deg </property>
     <property> fcs/yaw-cas/pi-sum-deg </property>
-    <property> fcs/yaw-cas/output-norm </property>
+    <property> fcs/yaw-cas/output-deg </property>
     <property> fcs/rudder-cmd-norm </property>
     <property> velocities/r-aero-rad_sec </property>
   </output>
@@ -57,16 +56,15 @@
       <condition> simulation/sim-time-sec ge 3.0 </condition>
       <notify>
         <property>fcs/sensor/yaw-rate-rad_sec</property>
-        <property>fcs/yaw-cas/notch-rad_sec</property>
-        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
-        <property>fcs/yaw-cas/rate-feedback</property>
-        <property>fcs/yaw-cas/aoa-crossfeed</property>
-        <property>fcs/yaw-cas/feedback-sum-deg</property>
-        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
+        <property>fcs/yaw-cas/accel-rate-gained</property>
+        <property>fcs/yaw-cas/crossfeed-product</property>
+        <property>fcs/yaw-cas/feedback-deg</property>
+        <property>fcs/yaw-cas/damper-output-deg</property>
         <property>fcs/yaw-cas/integrator-deg</property>
         <property>fcs/yaw-cas/pi-sum-deg</property>
-        <property>fcs/yaw-cas/output-norm</property>
-        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output near zero at baseline"/>
+        <property>fcs/yaw-cas/output-deg</property>
+        <check property="fcs/yaw-cas/output-deg" value="0" tol_abs="0.5" message="Yaw CAS output near zero at baseline"/>
         <check property="fcs/yaw-cas/pi-sum-deg" value="0" tol_abs="0.5" message="Yaw CAS PI sum near zero at baseline"/>
       </notify>
     </event>
@@ -86,14 +84,14 @@
       <notify>
         <property>velocities/r-aero-rad_sec</property>
         <property>fcs/sensor/yaw-rate-rad_sec</property>
-        <property>fcs/yaw-cas/notch-rad_sec</property>
-        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
-        <property>fcs/yaw-cas/rate-feedback</property>
-        <property>fcs/yaw-cas/aoa-crossfeed</property>
-        <property>fcs/yaw-cas/feedback-sum-deg</property>
-        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/structural-filter</property>
+        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
+        <property>fcs/yaw-cas/accel-rate-gained</property>
+        <property>fcs/yaw-cas/crossfeed-product</property>
+        <property>fcs/yaw-cas/feedback-deg</property>
+        <property>fcs/yaw-cas/damper-output-deg</property>
         <property>fcs/yaw-cas/integrator-deg</property>
-        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-deg</property>
       </notify>
     </event>
 
@@ -101,10 +99,10 @@
     <event name="Yaw CAS integrator at 3s">
       <condition> simulation/sim-time-sec ge 8.0 </condition>
       <notify>
-        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/damper-output-deg</property>
         <property>fcs/yaw-cas/integrator-deg</property>
         <property>fcs/yaw-cas/pi-sum-deg</property>
-        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-deg</property>
       </notify>
     </event>
 
@@ -113,7 +111,7 @@
       <condition> simulation/sim-time-sec ge 10.0 </condition>
       <set name="fcs/rudder-cmd-norm" value="0.0"/>
       <notify>
-        <property>fcs/yaw-cas/output-norm</property>
+        <property>fcs/yaw-cas/output-deg</property>
       </notify>
     </event>
 
@@ -121,11 +119,11 @@
     <event name="Washout decay at 2s after release">
       <condition> simulation/sim-time-sec ge 12.0 </condition>
       <notify>
-        <property>fcs/yaw-cas/rate-washout-rad_sec</property>
-        <property>fcs/yaw-cas/proportional-deg</property>
+        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
+        <property>fcs/yaw-cas/damper-output-deg</property>
         <property>fcs/yaw-cas/integrator-deg</property>
-        <property>fcs/yaw-cas/output-norm</property>
-        <check property="fcs/yaw-cas/rate-washout-rad_sec" value="0" tol_abs="0.05" message="Yaw washout decaying toward zero"/>
+        <property>fcs/yaw-cas/output-deg</property>
+        <check property="fcs/yaw-cas/rate-highpass-rad_sec" value="0" tol_abs="0.05" message="Yaw washout decaying toward zero"/>
       </notify>
     </event>
 
@@ -142,8 +140,8 @@
       <condition> simulation/sim-time-sec ge 16.5 </condition>
       <notify>
         <property>fcs/yaw-cas/pi-sum-deg</property>
-        <property>fcs/yaw-cas/output-norm</property>
-        <check property="fcs/yaw-cas/output-norm" value="0" tol_abs="0.01" message="Yaw CAS output zeroed when disabled"/>
+        <property>fcs/yaw-cas/output-deg</property>
+        <check property="fcs/yaw-cas/output-deg" value="0" tol_abs="0.5" message="Yaw CAS output zeroed when disabled"/>
       </notify>
     </event>
 

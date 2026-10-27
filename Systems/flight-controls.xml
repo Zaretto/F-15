@@ -127,6 +127,7 @@
             <default value="0.0"/>
             <test logic="AND" value="1">
                 fcs/cas-roll-enable ne 0.0
+                fcs/yaw-damper-active ne 0.0
             </test>
             <output>fcs/roll-cas-active</output>
         </switch>
@@ -892,7 +893,8 @@
                     <independentVar lookup="column">fcs/elevator-pos-deg</independentVar>
                     <tableData>
                                  -20     -10       0      10
-                        -5       3.0     4.0     5.0     3.0
+                        -5       0.0     0.0     0.0     0.0
+                        -1       0.0     0.0     0.0     0.0
                          0       3.0     4.0     5.0     3.0
                          5       3.0     4.0     5.0     3.0
                         15       2.0     3.0     4.0     2.0
@@ -941,54 +943,51 @@
     <!-- Schematic: Docs/fcs-yaw-cas.png  |  Docs/F-15-FCS.md              -->
     <!-- ================================================================== -->
     <channel name="Yaw CAS">
-        <!-- Yaw CAS per AEDC-TR-80-60 schematic (Docs/fcs-yaw-cas.png):
-             Bottom path: yaw_accel×22 + yaw_rate_highpass → sum → ×0.005 → structural filter
-             Middle path: AOA crossfeed (pitch_rate × lateral_acc → schedule 13 → washout)
-             Both paths sum → ×(180/π) → PI controller (limit ±3.75, integrator 0.5/S) → limit ±15
+        <!-- Yaw CAS per AEDC-TR-80-60 / F15_FCS_Transfer_Functions.txt:
+             Structural filter path (Path A): (rdot×22 + r_hp) → ×0.005 → notch filter
+             r_hp inside the struct filter sum ensures zero DC gain (no steady-yaw feedback).
+             Crossfeed (TF doc 4.2.6): pitch_rate × lateral_acc → schedule ⑬ → washout S/(S+1)
+             Both paths → ×(180/π) → PI (P: ±3.75, I: 0.5/S ±3.75) → ±15 → output
         -->
 
-        <!-- Yaw acceleration path: direct rdot × 22 per schematic.
-             No washout - the schematic shows YAW ACC (rad/sec2) going directly
-             to ×22. JSBSim provides the actual rdot. -->
+        <!-- Yaw acceleration path: rdot × 22 per schematic -->
         <pure_gain name="fcs/yaw-cas/accel-gained">
             <input>accelerations/rdot-rad_sec2</input>
             <gain>cas/yaw-cas-acceleration-gain</gain>
         </pure_gain>
 
-        <!-- Yaw rate high-pass: 2S/(2S+1), c1=0.5 per schematic -->
+        <!-- Yaw rate high-pass: 2S/(2S+1), c1=0.5 per schematic.
+             Goes INTO the structural filter sum (not added after) so the combined
+             Path A output is zero at DC — yaw damper does not fight steady turns. -->
         <washout_filter name="fcs/yaw-cas/rate-highpass-rad_sec">
             <input>fcs/sensor/yaw-rate-rad_sec</input>
             <c1>0.5</c1>
         </washout_filter>
 
-        <!-- Sum lateral_acc + accel×22 + rate highpass per schematic
-             (Docs/yaw-cas-0.png shows LATERAL ACC entering the same sum).
-             Lateral acc provides direct sideslip feedback - proportional to
-             beta, this is the primary dutch roll damping term.
-             Uses Ny×g (accelerometer-sensed lateral specific force in ft/sec2),
-             NOT vdot (which includes gravity and creates runaway during banking). -->
-        <!-- Lateral acc in g's (no conversion). Ny at ~0.022g in cruise
-             is comparable to structural filter (~0.003) and rate hp (~0.05),
-             giving a balanced contribution through ×57.3. -->
-        <pure_gain name="fcs/yaw-cas/lateral-acc-ft_sec2">
+        <!-- Lateral acceleration sensor: Ny in g's.
+             Used in the crossfeed path (pitch_rate × a_y per TF doc 4.2.6),
+             NOT in the structural filter sum. -->
+        <pure_gain name="fcs/yaw-cas/lateral-acc-g">
             <input>accelerations/Ny</input>
             <gain>1.0</gain>
         </pure_gain>
 
-        <!-- YAW ACC×22 × 0.005 + LATERAL ACC (ft/sec2) per schematic -->
+        <!-- Path A: (rdot×22 + r_hp) × 0.005 → structural notch filter.
+             r_hp ensures zero DC gain: at steady yaw both rdot and r_hp → 0. -->
         <fcs_function name="fcs/yaw-cas/accel-rate-gained">
             <function>
                 <product>
                     <sum>
                         <property>fcs/yaw-cas/accel-gained</property>
-                        <property>fcs/yaw-cas/lateral-acc-ft_sec2</property>
+                        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
                     </sum>
                     <property>cas/yaw-cas-feedback-gain</property>
                 </product>
             </function>
         </fcs_function>
 
-        <!-- Structural notch filter on accel path only -->
+        <!-- Structural notch filter: G(s) = (s²+17.6s+484)/(s²+44s+484)
+             ωn=22 rad/s (3.5 Hz, fuselage first bending), ζ₁=0.4, ζ₂=1.0, notch depth -8 dB -->
         <second_order_filter name="fcs/yaw-cas/structural-filter">
             <input>fcs/yaw-cas/accel-rate-gained</input>
             <c1>1</c1>
@@ -999,21 +998,14 @@
             <c6>484</c6>
         </second_order_filter>
 
-        <!-- Roll-yaw crossfeed per schematic:
-             PITCH RATE × ANGLE OF ATTACK → schedule(13) → washout S/(S+1)
-             Lateral acc goes to the main sum, NOT the crossfeed.
-             This crossfeed provides yaw coordination during pitch maneuvers
-             at high AOA (pitch rate × AOA is non-zero during pull at alpha).
-             At zero pitch rate or zero AOA, the crossfeed is zero. -->
-        <!-- Crossfeed: pitch_rate × schedule_13(AOA)
-             Schedule (13) is a 1D table keyed on AOA providing a gain factor.
-             The crossfeed compensates for pitch-yaw coupling which varies with AOA.
-             TODO: table values derived from autotest pitch-doublet sweeps. -->
+        <!-- Roll-yaw crossfeed per TF doc 4.2.6: pitch_rate × lateral_acc → schedule ⑬ → washout
+             Schedule ⑬ shapes the gain as a function of the crossfeed product.
+             TODO: table values to be derived from pitch-doublet sweep autotests. -->
         <fcs_function name="fcs/yaw-cas/crossfeed-value">
             <function>
                 <product>
                     <property>velocities/q-aero-rad_sec</property>
-                    <property>fcs/sensor/aoa-deg</property>
+                    <property>fcs/yaw-cas/lateral-acc-g</property>
                 </product>
             </function>
         </fcs_function>
@@ -1065,15 +1057,13 @@
             <c1>1.0</c1>
         </washout_filter>
 
-        <!-- Convert (structural_filter + rate_highpass) to degrees.
-             Lateral acc enters AFTER ×0.005 and AFTER structural filter. -->
+        <!-- Convert structural filter output to degrees.
+             r_hp is already inside the struct filter sum; no separate Path B term needed.
+             DC gain is zero (r_hp and rdot both → 0 in steady state). -->
         <fcs_function name="fcs/yaw-cas/feedback-deg">
             <function>
                 <product>
-                    <sum>
-                        <property>fcs/yaw-cas/structural-filter</property>
-                        <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
-                    </sum>
+                    <property>fcs/yaw-cas/structural-filter</property>
                     <value>57.29578</value>
                 </product>
             </function>
@@ -1095,22 +1085,11 @@
             </clipto>
         </fcs_function>
 
-        <!-- Integrator input: rate highpass only (zero at DC).
-             The structural filter + Ny path passes DC which would
-             accumulate in the integrator and saturate. The rate highpass
-             is zero at steady state by design (washout). -->
-        <fcs_function name="fcs/yaw-cas/integrator-input-deg">
-            <function>
-                <product>
-                    <property>fcs/yaw-cas/rate-highpass-rad_sec</property>
-                    <value>57.29578</value>
-                </product>
-            </function>
-        </fcs_function>
-
-        <!-- INTEGRAL: 0.5/S on rate path only, clip ±3.75 -->
+        <!-- INTEGRAL: 0.5/S on feedback-deg, clip ±3.75.
+             With r_hp inside the struct filter sum, feedback-deg is zero at DC,
+             so the integrator will not accumulate in steady turns. -->
         <integrator name="fcs/yaw-cas/integrator-deg">
-            <input>fcs/yaw-cas/integrator-input-deg</input>
+            <input>fcs/yaw-cas/feedback-deg</input>
             <c1>0.5</c1>
             <clipto>
                 <min>-3.75</min>
@@ -1286,31 +1265,52 @@
              Per Garrison: "CAS ARI does essentially the same job as the hydro-
              mechanical ARI except that it is scheduled by roll rate as a function
              of angle of attack. It can operate subsonically or supersonically."
-             Roll rate factor: ramps from 0 at low rates to 1.0 at high rates,
-             so CAS ARI activates proportionally during rolling maneuvers. -->
-        <!-- CAS ARI roll rate scaling: ramp from 0 at 2 deg/s to 1.0 at 30 deg/s.
-             The previous 10 deg/s dead zone left no rudder coordination during
-             roll initiation, allowing adverse yaw to build beta unchecked.
-             Per Garrison: CAS ARI "operates at all speeds" - it should engage
-             early in the roll, not wait for high roll rates. -->
+             Per Garrison: series authority is ±15 degrees. -->
+
+        <!-- DIVERGENCE — roll-rate-factor uses |p|, not signed p.
+             The schematic implies a symmetric signed table (ramp +ve for +ve p,
+             ramp -ve for -ve p). The signed approach creates a dead zone at the
+             zero crossing during snap roll reversals: the factor drops to 0 while
+             the yaw-CAS integrator (wound up from the previous roll direction)
+             continues to drive rudder the wrong way for the new roll. Using |p|
+             keeps the factor at 1.0 through the reversal; the sign of the ARI
+             output is already set by aileron-cmd-scheduled changing sign with the
+             pilot input. Confirmed by flight-data analysis (see commit log). -->
+        <fcs_function name="fcs/ari/roll-rate-abs-rad_sec">
+            <function>
+                <abs>
+                    <property>fcs/sensor/roll-rate-filtered-rad_sec</property>
+                </abs>
+            </function>
+        </fcs_function>
+
         <fcs_function name="fcs/ari/roll-rate-factor">
             <description>CAS ARI roll rate scaling: |p| ramps 0→1 over 2-30 deg/s</description>
             <function>
                 <table>
-                    <independentVar lookup="row">fcs/sensor/roll-rate-filtered-rad_sec</independentVar>
+                    <independentVar lookup="row">fcs/ari/roll-rate-abs-rad_sec</independentVar>
                     <tableData>
-                        -0.5236   1.0
-                        -0.0349   0.0
-                         0.0      0.0
-                         0.0349   0.0
-                         0.5236   1.0
+                        0.0000   0.0
+                        0.0349   0.0
+                        0.5236   1.0
                     </tableData>
                 </table>
             </function>
         </fcs_function>
 
+        <!-- AoA schedule: positive gain at low AoA → proverse rudder in direction of roll.
+             Per Garrison: "produce rudder in the direction of the roll at positive
+             [AoA]... prevent the proverse yaw from producing extremely high roll
+             rates at negative [AoA]."
+             DIVERGENCE — table signs were previously inverted (negative gain at low AoA),
+             causing the CAS ARI to apply full adverse rudder (−15 deg) during rolls.
+             Flight data (fcs-diag log, manoeuvre 4 at 634kts SL) confirmed the CAS ARI
+             was saturating at −15 deg opposite-direction rudder while the yaw CAS could
+             only provide +5 deg correcting rudder, producing up to 3.8 deg adverse beta.
+             With CAS disabled the gate closes, explaining why handling was better CAS-off.
+             Table values are estimates — AEDC-TR-80-60 schedule not yet sourced.
+             Clip ±15 per Garrison series-authority figure. -->
         <fcs_function name="fcs/ari/cas-demand-deg">
-            <description>CAS ARI: AOA schedule × roll rate factor, in degrees (×30)</description>
             <function>
                 <product>
                     <property>fcs/aileron-cmd-scheduled</property>
@@ -1318,18 +1318,18 @@
                     <table>
                         <independentVar lookup="row">fcs/sensor/aoa-deg</independentVar>
                         <tableData>
-                            -5   -25.5
-                             0   -25.5
+                            -5    25.5
+                             0    25.5
                             10     0.0
-                            20    16.5
-                            30    16.5
+                            20   -16.5
+                            30   -16.5
                         </tableData>
                     </table>
                 </product>
             </function>
             <clipto>
                 <min>-15.0</min>
-                <max>7.5</max>
+                <max>15.0</max>
             </clipto>
         </fcs_function>
 

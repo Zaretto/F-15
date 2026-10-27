@@ -795,6 +795,7 @@
             </actuator>
         </channel>
     </flight_control>
+    <system file="jsb-init"/>
     <system file="f-15-hydraulic"/>
     <system file="f-15-electrics"/>
     <system file="catapult"/>
@@ -5654,4 +5655,150 @@
         <property>gear/unit[2]/WOW</property>
     </output>
 -->
+
+<!-- FCS diagnostic output — enable to capture in-flight data for CAS analysis.
+     Output path is c:/temp/F-15-FCS-diag.csv; create c:/temp/ if needed.
+     Rate 20 Hz gives 50ms resolution — adequate for rapid roll transients. -->
+<output name="c:/temp/F-15-FCS-diag.csv" type="CSV" rate="20">
+
+    <!-- === FLIGHT CONDITION === -->
+    <property caption="time">simulation/sim-time-sec</property>
+    <property caption="vc-kts">velocities/vc-kts</property>
+    <property caption="mach">velocities/mach</property>
+    <property caption="alt-ft">position/h-sl-ft</property>
+    <property caption="alpha-deg">aero/alpha-deg</property>
+    <property caption="beta-deg">aero/beta-deg</property>
+    <property caption="phi-deg">attitude/phi-deg</property>
+    <property caption="theta-deg">attitude/theta-deg</property>
+    <property caption="psi-deg">attitude/psi-deg</property>
+    <property caption="nz-g">accelerations/Nz</property>
+    <property caption="ny-g">accelerations/Ny</property>
+
+    <!-- === BODY RATES (rad/sec) === -->
+    <property caption="p-aero-rad_sec">velocities/p-aero-rad_sec</property>
+    <property caption="q-aero-rad_sec">velocities/q-aero-rad_sec</property>
+    <property caption="r-aero-rad_sec">velocities/r-aero-rad_sec</property>
+    <property caption="pdot-rad_sec2">accelerations/pdot-rad_sec2</property>
+    <property caption="qdot-rad_sec2">accelerations/qdot-rad_sec2</property>
+    <property caption="rdot-rad_sec2">accelerations/rdot-rad_sec2</property>
+
+    <!-- === PILOT INPUTS === -->
+    <property caption="aileron-cmd-norm">fcs/aileron-cmd-norm</property>
+    <property caption="rudder-cmd-norm">fcs/rudder-cmd-norm</property>
+    <property caption="elevator-cmd-norm">fcs/elevator-cmd-norm</property>
+
+    <!-- === CAS ENABLE / MODE STATES === -->
+    <property caption="cas-roll-enable">fcs/cas-roll-enable</property>
+    <property caption="cas-yaw-enable">fcs/cas-yaw-enable</property>
+    <property caption="cas-pitch-enable">fcs/cas-pitch-enable</property>
+    <property caption="roll-cas-active">fcs/roll-cas-active</property>
+    <property caption="yaw-damper-active">fcs/yaw-damper-active</property>
+    <property caption="pitch-damper-active">fcs/pitch-damper-active</property>
+    <property caption="init-ramp">fcs/init-ramp</property>
+    <property caption="departure-shutdown">fcs/departure-cas-shutdown</property>
+
+    <!-- === SENSOR CHAIN === -->
+    <property caption="sens-roll-rate-rad_sec">fcs/sensor/roll-rate-filtered-rad_sec</property>
+    <property caption="sens-yaw-rate-rad_sec">fcs/sensor/yaw-rate-rad_sec</property>
+    <property caption="sens-yaw-rate-deg_sec">fcs/sensor/yaw-rate-deg_sec</property>
+    <property caption="sens-yaw-accel-rad_sec2">fcs/sensor/yaw-accel-rad_sec2</property>
+    <property caption="sens-aoa-deg">fcs/sensor/aoa-deg</property>
+    <property caption="sens-nz-g">fcs/sensor/nz-g</property>
+
+    <!-- === GAIN SCHEDULING === -->
+    <property caption="pitch-ratio">fcs/pitch-ratio</property>
+    <property caption="pitch-ratio-calc">fcs/pitch-ratio-calc</property>
+    <property caption="roll-ratio">fcs/roll-ratio</property>
+    <property caption="roll-ratio-dmd">fcs/roll-ratio-dmd</property>
+    <property caption="rudder-effectivity">fcs/rudder-effectivity</property>
+
+    <!-- === ROLL CAS === -->
+    <property caption="rcas-cmd-raw-deg_sec">fcs/roll-cas/rate-commanded-raw-deg_sec</property>
+    <property caption="rcas-cmd-deg_sec">fcs/roll-cas/rate-commanded-deg_sec</property>
+    <property caption="rcas-sensed-deg_sec">fcs/roll-cas/rate-sensed-deg_sec</property>
+    <property caption="rcas-xfeed-pitch-rate">fcs/roll-cas/crossfeed-pitch-rate</property>
+    <property caption="rcas-xfeed-pitch-washed">fcs/roll-cas/crossfeed-pitch-rate-washed</property>
+    <property caption="rcas-xfeed-sum">fcs/roll-cas/crossfeed-sum</property>
+    <property caption="rcas-xfeed-filtered">fcs/roll-cas/pitch-crossfeed-filtered</property>
+    <property caption="rcas-xfeed-deg">fcs/roll-cas/pitch-crossfeed-deg</property>
+    <property caption="rcas-rate-error-deg_sec">fcs/roll-cas/rate-error-deg_sec</property>
+    <property caption="rcas-error-gain-deg">fcs/roll-cas/error-gain-deg</property>
+    <property caption="rcas-aoa-authority">fcs/roll-cas/aoa-authority</property>
+    <property caption="rcas-authority-applied-deg">fcs/roll-cas/authority-applied-deg</property>
+    <property caption="rcas-out-raw-deg">fcs/roll-cas/output-deg-raw</property>
+    <property caption="rcas-out-deg">fcs/roll-cas/output-deg</property>
+
+    <!-- === YAW CAS === -->
+    <property caption="ycas-accel-gained">fcs/yaw-cas/accel-gained</property>
+    <property caption="ycas-rate-hp-rad_sec">fcs/yaw-cas/rate-highpass-rad_sec</property>
+    <property caption="ycas-lateral-acc-g">fcs/yaw-cas/lateral-acc-g</property>
+    <property caption="ycas-accel-rate-gained">fcs/yaw-cas/accel-rate-gained</property>
+    <property caption="ycas-structural-filter">fcs/yaw-cas/structural-filter</property>
+    <property caption="ycas-crossfeed-value">fcs/yaw-cas/crossfeed-value</property>
+    <property caption="ycas-crossfeed-product">fcs/yaw-cas/crossfeed-product</property>
+    <property caption="ycas-crossfeed-washout">fcs/yaw-cas/crossfeed-washout</property>
+    <property caption="ycas-pedal-scaled">fcs/yaw-cas/pedal-cmd-scaled</property>
+    <property caption="ycas-pedal-prefiltered">fcs/yaw-cas/pedal-prefiltered</property>
+    <property caption="ycas-feedback-deg">fcs/yaw-cas/feedback-deg</property>
+    <property caption="ycas-damper-out-deg">fcs/yaw-cas/damper-output-deg</property>
+    <property caption="ycas-integrator-deg">fcs/yaw-cas/integrator-deg</property>
+    <property caption="ycas-pi-sum-deg">fcs/yaw-cas/pi-sum-deg</property>
+    <property caption="ycas-out-raw-deg">fcs/yaw-cas/output-deg-raw</property>
+    <property caption="ycas-out-deg">fcs/yaw-cas/output-deg</property>
+
+    <!-- === ARI — Aileron-Rudder Interconnect === -->
+    <property caption="ari-mech-filtered">fcs/ari/mechanical-filtered</property>
+    <property caption="ari-mech-raw-norm">fcs/ari/mechanical-demand-raw-norm</property>
+    <property caption="ari-mech-demand-deg">fcs/ari/mechanical-demand-deg</property>
+    <property caption="ari-mech-out-deg">fcs/ari/mechanical-output-deg</property>
+    <property caption="ari-roll-rate-abs">fcs/ari/roll-rate-abs-rad_sec</property>
+    <property caption="ari-roll-rate-factor">fcs/ari/roll-rate-factor</property>
+    <property caption="ari-cas-demand-deg">fcs/ari/cas-demand-deg</property>
+    <property caption="ari-cas-out-deg">fcs/ari/cas-output-deg</property>
+
+    <!-- === YAW MIX (final rudder demand) === -->
+    <property caption="ymix-pedal-cmd-deg">fcs/yaw-mix/pedal-cmd-deg</property>
+    <property caption="ymix-out-deg">fcs/yaw-mix/output-deg</property>
+
+    <!-- === DEPARTURE PROTECTION === -->
+    <property caption="dep-yaw-abs-deg_sec">fcs/departure/yaw-rate-abs-deg_sec</property>
+    <property caption="dep-aileron-washout">fcs/departure/aileron-washout-factor</property>
+    <property caption="dep-pitch-authority">fcs/departure/pitch-authority-factor</property>
+
+    <!-- === ROLL MIX (aileron + diff-stab) === -->
+    <property caption="rmix-ail-ratio-norm">fcs/roll-mix/aileron-ratio-applied-norm</property>
+    <property caption="rmix-ail-out-norm">fcs/roll-mix/aileron-output-norm</property>
+    <property caption="rmix-ratio-norm">fcs/roll-mix/ratio-applied-norm</property>
+    <property caption="rmix-out-norm">fcs/roll-mix/output-norm</property>
+
+    <!-- === PITCH MIX === -->
+    <property caption="pmix-sum-deg">fcs/pitch-mix/sum-deg</property>
+    <property caption="pmix-out-deg">fcs/pitch-mix/output-deg</property>
+
+    <!-- === ACTUATORS === -->
+    <property caption="act-ail-in-norm">fcs/actuator/aileron-input-norm</property>
+    <property caption="act-ail-out-norm">fcs/actuator/aileron-output-norm</property>
+    <property caption="act-rcas-in-deg">fcs/actuator/roll-cas-input-deg</property>
+    <property caption="act-rcas-out-deg">fcs/actuator/roll-cas-output-deg</property>
+    <property caption="act-roll-in-norm">fcs/actuator/roll-input-norm</property>
+    <property caption="act-roll-out-norm">fcs/actuator/roll-output-norm</property>
+    <property caption="act-yaw-in-deg">fcs/actuator/yaw-input-deg</property>
+    <property caption="act-yaw-out-deg">fcs/actuator/yaw-output-deg</property>
+    <property caption="act-pitch-in-deg">fcs/actuator/pitch-input-deg</property>
+    <property caption="act-pitch-out-deg">fcs/actuator/pitch-output-deg</property>
+
+    <!-- === SURFACE POSITIONS === -->
+    <property caption="aileron-pos-deg">fcs/aileron-pos-deg</property>
+    <property caption="aileron-pos-norm">fcs/aileron-pos-norm</property>
+    <property caption="left-aileron-pos-rad">fcs/left-aileron-pos-rad</property>
+    <property caption="right-aileron-pos-rad">fcs/right-aileron-pos-rad</property>
+    <property caption="rudder-pos-deg">fcs/rudder-pos-deg</property>
+    <property caption="rudder-pos-norm">fcs/rudder-pos-norm</property>
+    <property caption="elevator-pos-deg">fcs/elevator-pos-deg</property>
+    <property caption="elev-left-pos-deg">fcs/elevator-left-pos-deg</property>
+    <property caption="elev-right-pos-deg">fcs/elevator-right-pos-deg</property>
+    <property caption="diff-stab-total-deg">fcs/diff-stab-total-deg</property>
+
+</output>
+
 </fdm_config>

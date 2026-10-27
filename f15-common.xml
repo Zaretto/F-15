@@ -47,11 +47,12 @@
                 <ptc-stick-to-g>2.0</ptc-stick-to-g>
                 <ptc-roll-accel-gain>0.01</ptc-roll-accel-gain>
                 <ptc-pitch-accel-gain>0.01</ptc-pitch-accel-gain>
-                <ptc-cas-interconnect-gain>0.1</ptc-cas-interconnect-gain>
-                <!-- Yaw CAS (per AEDC-TR-80-60 schematic):
+                <ptc-cas-interconnect-gain>0.2</ptc-cas-interconnect-gain>
+                <!-- Yaw CAS (per AEDC-TR-80-60 / F15_FCS_Transfer_Functions.txt):
                      acceleration-gain: 22 — applied to yaw accel (rad/sec2)
-                     feedback-gain: 0.005 — applied to sum of (accel×22 + rate_highpass)
-                     Signal flow: (accel×22 + rate_hp) → ×0.005 → structural_filter → +crossfeed → ×57.296 → PI -->
+                     feedback-gain: 0.005 — applied to sum of (accel×22 + rate_hp) before struct filter
+                     crossfeed: pitch_rate × lateral_acc → schedule ⑬ → washout (TF doc 4.2.6)
+                     Signal flow: (rdot×22 + r_hp) → ×0.005 → notch@22rad/s → ×57.3 → PI ±3.75 → ±15 -->
                 <yaw-cas-acceleration-gain>22</yaw-cas-acceleration-gain>
                 <yaw-cas-feedback-gain>0.005</yaw-cas-feedback-gain>
                 <yaw-cas-proportional-gain>2</yaw-cas-proportional-gain>

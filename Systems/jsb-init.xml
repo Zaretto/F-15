@@ -17,7 +17,7 @@
   <property value="1.0">cas/pitch-cas-nz-accel-gain</property>
   <property value="2.0">cas/pitch-cas-stick-nz-gain</property>
   <property value="1.5">cas/ptc-i-gain</property>
-  <property value="0.1">cas/ptc-cas-interconnect-gain</property>
+  <property value="0.2">cas/ptc-cas-interconnect-gain</property>
   <property value="7">cas/ptc-nz-accelerometer-c1</property>
   <property value="1">cas/ptc-nz-accelerometer-limit</property>
   <property value="0.267">cas/ptc-p-gain</property>
