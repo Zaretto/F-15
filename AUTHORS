@@ -1,0 +1,48 @@
+FlightGear F-15 (F-15C, F-15D, F-15E DBS)
+
+Licensed under the GNU General Public License, version 2 only. See COPYING and README.md.
+Files with their own licence header are licensed as stated in that header.
+
+Richard Harrison <rjh@zaretto.com>
+    Project lead. Flight dynamics and systems models, cockpit model and operation,
+    sound, Canvas HUD / MPCD / VSD / TEWS, revisions to the external 3D model
+    (engines, ramps, animations, speedbrake), weapons and radar integration.
+
+Enrique Laso (Flying toaster)
+    Original external 3D model (2015).
+
+Nikolai V. Chr.
+    Weapons, radar, damage model, MPCD SIT display, HUD (2015 onwards).
+
+Gene Buckle (GeneB)
+    Photographs and measurements of the cockpit of F-15C 80-0007 (f15sim.com),
+    used as the source for the cockpit textures.
+
+Colin Geniet
+    Nasal/datalink.nas
+
+Anders Gidenstam
+    Nasal/dual-control.nas, Nasal/mp-network.nas
+
+Justin Nicholson
+    Nasal/iff.nas
+
+Fabrizio Fracaroli
+    Models/Effects/Vapour/Vapour.xml, Vapour2.xml
+
+xii (Alexis)
+    F-14 origin of the radar and missile code, since extensively modified.
+
+Lato font, Fonts/Lato-Regular.ttf and Lato-Bold.ttf, is under the SIL Open Font
+License 1.1 and is not covered by the GPL.
+
+Other contributors, from the commit history:
+
+    Joshua Davidson
+    J Maverick 16
+    Wang Jianlin
+    SammySkycrafts
+    onox
+    Vivaan
+
+Various authors have contributed liveries; see the commit history for details.

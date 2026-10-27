@@ -21,6 +21,34 @@ models of the F-15: (measurements in inches). % MAC = (xcg - 408.1 * 100) / 191.
 - JSBSim axes system has origin so that 0,0,0 is the CG (25.65% MAC)
 
 
+## License
+
+This aircraft is licensed under the GNU General Public License, version 2 only
+(SPDX: `GPL-2.0-only`). See [COPYING](COPYING) for the full text and [AUTHORS](AUTHORS) for the
+copyright holders.
+
+A file that carries its own licence header is licensed as stated in that header:
+
+- `Nasal/datalink.nas` - Colin Geniet, GPL version 2 or any later version
+- `Nasal/dual-control.nas`, `Nasal/mp-network.nas` - Anders Gidenstam, GPL version 2 or later
+- `Nasal/iff.nas` - Justin Nicholson, GPL version 2
+- `Models/Effects/Vapour/Vapour.xml`, `Vapour2.xml` - Fabrizio Fracaroli, GPL version 2 with an
+  ISC-style permission notice for the incorporated work
+
+The addon as a whole is distributed under version 2 of the GPL. The files above that grant "or any later
+version" remain available under those terms when used on their own.
+
+### 3D models and textures
+
+- Exterior model (`Models/f15c.ac` and the parts derived from it): based on a model by Enrique Laso,
+  supplied to the author as a Blender file under the GPL and extensively modified since.
+- Cockpit mesh: by Richard Harrison.
+- Cockpit textures: some of the cockpit textures originate from photographs and measurements provided by
+  Gene Buckle (GeneB), owner of F-15C 80-0007 and f15sim.com, and have been extensively processed and
+  cleaned up; many textures and gauges were redrawn by Richard Harrison. All are licensed under the GPL.
+- `Fonts/Lato-Regular.ttf`, `Fonts/Lato-Bold.ttf`: Lato, SIL Open Font License 1.1, not the GPL.
+
+
 ## RELEASE NOTES
 
 ### V1.12
