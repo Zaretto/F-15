@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <!-- F-15 All Variants
    | Richard Harrison: released 2015-06-29 : rjh@zaretto.com
    |   
@@ -318,7 +318,7 @@
 
     <sim>
         <expected-aircraft-dir-name>F-15</expected-aircraft-dir-name>
-        <minimum-fg-version>2017.3</minimum-fg-version>
+        <minimum-fg-version>2018.3</minimum-fg-version>
         <description>F-15</description>
         <author>Richard Harrison, Enrique Laso (3d), Nikolai V. Chr.</author>
         <status>production</status>
